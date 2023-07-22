@@ -11,4 +11,5 @@ router.register(r'ingredients', IngredientViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('', include('users.urls')),
 ]
