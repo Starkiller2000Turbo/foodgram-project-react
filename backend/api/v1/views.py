@@ -6,6 +6,8 @@ from recipes.models import Ingredient, Tag
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для модели ингредиента."""
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (ReadOnly,)
@@ -15,6 +17,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для модели тега."""
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (ReadOnly,)

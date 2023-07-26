@@ -4,6 +4,8 @@ from recipes.models import Ingredient, Tag
 
 
 class IngredientAdmin(admin.ModelAdmin):
+    """Представление модели ингредиента в админ-зоне."""
+
     list_display = ('name', 'measurement_unit')
     search_fields = ('name',)
     list_filter = ('name', 'measurement_unit')
@@ -11,6 +13,8 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class TagAdmin(admin.ModelAdmin):
+    """Представление модели тега в админ-зоне."""
+
     list_display = ('name', 'color', 'slug')
     search_fields = ('name',)
     list_filter = ('name', 'color')

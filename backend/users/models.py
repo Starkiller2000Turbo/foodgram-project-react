@@ -4,7 +4,7 @@ from django.db import models
 
 
 class User(AbstractUser):
-    """Модель пользователя"""
+    """Модель пользователя."""
 
     username = models.CharField(
         max_length=150,
@@ -15,20 +15,20 @@ class User(AbstractUser):
         max_length=254,
         unique=True,
     )
-    first_name = models.CharField(
-        'Имя',
+    first_name = models.CharField(  # type: ignore[assignment]
+        verbose_name='Имя',
         max_length=150,
-        null=True,
         blank=True,
+        null=True,
     )
-    last_name = models.CharField(
-        'Фамилия',
+    last_name = models.CharField(  # type: ignore[assignment]
+        verbose_name='Фамилия',
         max_length=150,
-        null=True,
         blank=True,
+        null=True,
     )
     password = models.CharField(
-        'Пароль',
+        verbose_name='Пароль',
         max_length=150,
     )
 
@@ -47,5 +47,10 @@ class User(AbstractUser):
             ),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Представление модели при выводе.
+
+        Returns:
+            Строка поля name, используемого для представления модели.
+        """
         return self.username

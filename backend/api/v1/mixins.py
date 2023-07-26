@@ -5,4 +5,6 @@ class ListViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    """ViewSet исключительно для отображения."""
+
     pass
