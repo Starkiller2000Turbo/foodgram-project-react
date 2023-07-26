@@ -1,4 +1,5 @@
 import string
+
 from django.core.exceptions import ValidationError
 
 
@@ -9,5 +10,7 @@ def number_in_hex(value):
 
 def validate_color(value):
     if value[0] != '#' or not number_in_hex(value[1:]):
-        raise ValidationError('Это поле должно содержать код цвета в кодировке'
-                              ' HEX, начиная с  символа #')
+        raise ValidationError(
+            'Это поле должно содержать код цвета в кодировке'
+            ' HEX, начиная с  символа #',
+        )
