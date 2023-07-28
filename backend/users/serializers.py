@@ -37,6 +37,7 @@ class FollowingSerializer(serializers.ModelSerializer):
 
     recipes = RecipeNestedSerializer(many=True)
     recipes_count = serializers.IntegerField(source='recipes.count')
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -50,3 +51,14 @@ class FollowingSerializer(serializers.ModelSerializer):
             'recipes',
             'recipes_count',
         )
+
+    def get_is_subscribed(self, obj: User) -> bool:
+        """Формирование значения поля is_subscribed.
+
+        Args:
+            obj: Модель пользователя.
+
+        Returns:
+            Наличие подписки текущего пользователя на данного.
+        """
+        return self.context['request'].user in obj.followers.all()

@@ -31,6 +31,12 @@ class User(AbstractUser):
         verbose_name='Пароль',
         max_length=150,
     )
+    followings = models.ManyToManyField(
+        'self',
+        through='Following',
+        symmetrical=False,
+        related_name='followers',
+    )
 
     class Meta:
         ordering = ('id',)
@@ -40,10 +46,6 @@ class User(AbstractUser):
             models.UniqueConstraint(
                 fields=['username', 'email'],
                 name='username_email',
-            ),
-            models.CheckConstraint(
-                check=~models.Q(username='me'),
-                name='not_me',
             ),
         ]
 
@@ -73,6 +75,8 @@ class Following(models.Model):
     )
 
     class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'following'],
