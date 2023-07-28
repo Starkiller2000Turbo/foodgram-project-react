@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'djoser',
+    'rest_framework',
     'rest_framework.authtoken',
 
     'api.apps.ApiConfig',
@@ -122,3 +123,9 @@ DJOSER = {
         'user_create': 'users.serializers.UserSerializer',
     },
 }
+
+TEXT_LENGTH = 150
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = str(BASE_DIR / 'media')
