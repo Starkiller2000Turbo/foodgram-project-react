@@ -76,7 +76,10 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     author = UserReadSerializer(read_only=True)
     is_favorited = serializers.BooleanField(read_only=True, default=True)
-    is_in_shopping_cart = serializers.BooleanField(read_only=True, default=True)
+    is_in_shopping_cart = serializers.BooleanField(
+        read_only=True,
+        default=True,
+    )
     image = Base64ImageField(required=False, allow_null=True)
     ingredients = IngredientNestedSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
