@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from users.models import Following, User
+from users.models import Favorite, Following, User
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -21,5 +21,15 @@ class FollowingAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
+class FavoriteAdmin(admin.ModelAdmin):
+    """Представление модели пользователя в админ-зоне."""
+
+    list_display = ('user', 'recipe')
+    search_fields = ('user', 'recipe')
+    list_filter = ('user',)
+    empty_value_display = '-пусто-'
+
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Following, FollowingAdmin)
+admin.site.register(Favorite, FavoriteAdmin)

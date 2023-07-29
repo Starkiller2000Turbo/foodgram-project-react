@@ -37,6 +37,10 @@ class User(AbstractUser):
         symmetrical=False,
         related_name='followers',
     )
+    favorites = models.ManyToManyField(
+        'recipes.Recipe',
+        through='Favorite',
+    )
 
     class Meta:
         ordering = ('id',)
@@ -95,3 +99,36 @@ class Following(models.Model):
             Строку вида 'подписка <имя пользователя> на <имя автора>'
         """
         return f'подписка {self.user} на {self.following}'
+
+
+class Favorite(models.Model):
+    """Модель подписки."""
+
+    user = models.ForeignKey(
+        User,
+        verbose_name='пользователь',
+        on_delete=models.CASCADE,
+    )
+    recipe = models.ForeignKey(
+        'recipes.Recipe',
+        verbose_name='избранное',
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_user_recipe',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        """Задание текстового представления подписки.
+
+        Returns:
+            Строку вида 'подписка <имя пользователя> на <имя автора>'
+        """
+        return f'Избранное пользователя {self.user} содержит {self.recipe}'

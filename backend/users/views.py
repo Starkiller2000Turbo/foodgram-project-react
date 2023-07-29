@@ -1,16 +1,11 @@
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from core.types import AuthenticatedHttpRequest
 from users.models import Following, User
 from users.serializers import FollowingSerializer
-
-
-class AuthenticatedHttpRequest(HttpRequest):
-    """Класс запроса авторизованным пользователем."""
-
-    user: User
 
 
 @api_view(['POST', 'DELETE'])
