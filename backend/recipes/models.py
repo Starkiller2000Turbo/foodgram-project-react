@@ -60,6 +60,7 @@ class Recipe(AuthorTextModel):
     image = models.ImageField(
         upload_to='recipes/images/',
         unique=True,
+        verbose_name='картинка',
     )
     cooking_time = models.IntegerField(
         validators=[MinValueValidator(1)],

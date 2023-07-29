@@ -1,7 +1,9 @@
 from typing import Any, Dict, List
 
+from django.db.models import QuerySet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -46,6 +48,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = [AuthorOrReadOnly]
+    filter_backends = (DjangoFilterBackend,)
 
     def perform_create(self, serializer: serializers.ModelSerializer) -> None:
         """Автоматическое добавление автора и логических полей.
@@ -58,6 +61,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
             is_favorited=False,
             is_in_shopping_cart=False,
         )
+
+    def filter_queryset(self, queryset: QuerySet) -> QuerySet:
+        """Фильтрация списка выдаваемых элементов по параметрам.
+
+        Args:
+            queryset: Список всех объектов.
+
+        Returns:
+            Список объектов с учётом поля tags запроса.
+        """
+        queryset = super().filter_queryset(queryset)
+        tags = self.request.query_params.get('tags', None)
+
+        if tags is not None:
+            queryset = queryset.filter(tags__slug__contains=tags)
+
+        return queryset
 
 
 @api_view(['POST', 'DELETE'])
@@ -173,5 +193,7 @@ def shopping_cart(request: AuthenticatedHttpRequest) -> HttpResponse:
         file_data,
         content_type='application/text charset=utf-8',
     )
-    response['Content-Disposition'] = 'attachment; filename="foo.txt"'
+    response[
+        'Content-Disposition'
+    ] = 'attachment; filename="shopping_cart.txt"'
     return response

@@ -21,6 +21,8 @@ class UserSerializer(serializers.ModelSerializer):
 class UserReadSerializer(serializers.ModelSerializer):
     """Сериализатор модели пользователя."""
 
+    is_subscribed = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -29,7 +31,19 @@ class UserReadSerializer(serializers.ModelSerializer):
             'username',
             'first_name',
             'last_name',
+            'is_subscribed',
         )
+
+    def get_is_subscribed(self, obj: User) -> bool:
+        """Формирование значения поля is_subscribed.
+
+        Args:
+            obj: Модель пользователя.
+
+        Returns:
+            Наличие подписки текущего пользователя на данного.
+        """
+        return self.context['request'].user in obj.followers.all()
 
 
 class FollowingSerializer(serializers.ModelSerializer):
