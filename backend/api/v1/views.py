@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, serializers, viewsets
@@ -13,7 +15,7 @@ from api.v1.serializers import (
 from core.types import AuthenticatedHttpRequest
 from recipes.models import Ingredient, Recipe, Tag
 from recipes.serializers import RecipeNestedSerializer
-from users.models import Favorite
+from users.models import Favorite, Purchase
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -63,14 +65,16 @@ def favorite(
     request: AuthenticatedHttpRequest,
     pk: str,
 ) -> HttpResponse:
-    """Обработка запроса на подписку на определённого пользователя.
+    """Обработка запросов к списку избранных рецептов.
 
     Args:
         request: Передаваемый запрос.
-        username: логин автора, на которого подписываются
+        pk: id рецепта.
 
     Returns:
-        Рендер страницы редактирования поста.
+        Информацию о рецепте: если рецепт добавлен.
+        Ничего: в случае удаления рецепта.
+        Информацию об ошибке: в прочих случаях.
     """
     recipe = get_object_or_404(Recipe, id=pk)
     if request.method == 'POST':
@@ -95,3 +99,79 @@ def favorite(
         )
     Favorite.objects.filter(recipe=recipe, user=request.user).delete()
     return Response()
+
+
+@api_view(['POST', 'DELETE'])
+def purchase(
+    request: AuthenticatedHttpRequest,
+    pk: str,
+) -> HttpResponse:
+    """Обработка запросов к списку покупок.
+
+    Args:
+        request: Передаваемый запрос.
+        pk: id рецепта.
+
+    Returns:
+        Информацию о рецепте: если рецепт добавлен.
+        Ничего: в случае удаления рецепта.
+        Информацию об ошибке: в прочих случаях.
+    """
+    recipe = get_object_or_404(Recipe, id=pk)
+    if request.method == 'POST':
+        if recipe not in request.user.purchases.all():
+            Purchase.objects.create(recipe=recipe, user=request.user)
+            return Response(
+                RecipeNestedSerializer(
+                    recipe,
+                ).data,
+            )
+        return Response(
+            {
+                'errors': 'невозможно добавить в список покупок второй раз',
+            },
+        )
+    if not Purchase.objects.filter(
+        recipe=recipe,
+        user=request.user,
+    ).exists():
+        return Response(
+            {'errors': 'рецепта нет в избранном'},
+        )
+    Purchase.objects.filter(recipe=recipe, user=request.user).delete()
+    return Response()
+
+
+@api_view(['GET'])
+def shopping_cart(request: AuthenticatedHttpRequest) -> HttpResponse:
+    """Обработка запросов к списку покупок.
+
+    Args:
+        request: Передаваемый запрос.
+
+    Returns:
+        Файл со списком покупок пользователя.
+    """
+    cart: Dict[str, List[Any]] = dict()
+    purchases = request.user.purchases.all()
+    for purchase in purchases:
+        ingredients = purchase.ingredients.all()
+        for ingredient in ingredients:
+            if ingredient.name in cart.keys():
+                cart[ingredient.name][1] += ingredient.recipe_ingredients.get(
+                    recipe=purchase,
+                ).amount
+            else:
+                cart[ingredient.name] = [
+                    ingredient.measurement_unit,
+                    ingredient.recipe_ingredients.get(recipe=purchase).amount,
+                ]
+    file_data = ''
+    for key in cart.keys():
+        file_data += f'{key} ({cart[key][0]})- {cart[key][1]}\n'
+    response = HttpResponse(
+        file_data,
+        content_type='application/text charset=utf-8',
+    )
+    response['Content-Disposition'] = 'attachment; filename="foo.txt"'
+    return response

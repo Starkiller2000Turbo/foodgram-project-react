@@ -40,6 +40,12 @@ class User(AbstractUser):
     favorites = models.ManyToManyField(
         'recipes.Recipe',
         through='Favorite',
+        related_name='selected',
+    )
+    purchases = models.ManyToManyField(
+        'recipes.Recipe',
+        through='Purchase',
+        related_name='buyers',
     )
 
     class Meta:
@@ -96,9 +102,9 @@ class Following(models.Model):
         """Задание текстового представления подписки.
 
         Returns:
-            Строку вида 'подписка <имя пользователя> на <имя автора>'
+            Строку вида 'Подписка <пользователь> на <автор>'
         """
-        return f'подписка {self.user} на {self.following}'
+        return f'Подписка {self.user} на {self.following}'
 
 
 class Favorite(models.Model):
@@ -121,14 +127,47 @@ class Favorite(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_user_recipe',
+                name='unique_user_favorite',
             ),
         ]
 
     def __str__(self) -> str:
-        """Задание текстового представления подписки.
+        """Задание текстового представления избранного.
 
         Returns:
-            Строку вида 'подписка <имя пользователя> на <имя автора>'
+            Строку вида 'Избранное <пользователь> содержит <рецепт>'
         """
-        return f'Избранное пользователя {self.user} содержит {self.recipe}'
+        return f'Избранное {self.user} содержит {self.recipe}'
+
+
+class Purchase(models.Model):
+    """Модель подписки."""
+
+    user = models.ForeignKey(
+        User,
+        verbose_name='пользователь',
+        on_delete=models.CASCADE,
+    )
+    recipe = models.ForeignKey(
+        'recipes.Recipe',
+        verbose_name='избранное',
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = 'Покупка'
+        verbose_name_plural = 'Покупки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_user_purchase',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        """Задание текстового представления покупки.
+
+        Returns:
+            Строку вида 'Список покупок <пользователь> содержит <рецепт>'
+        """
+        return f'Список покупок {self.user} содержит {self.recipe}'

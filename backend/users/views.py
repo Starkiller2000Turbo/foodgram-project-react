@@ -13,14 +13,16 @@ def follow_unfollow(
     request: AuthenticatedHttpRequest,
     pk: str,
 ) -> HttpResponse:
-    """Обработка запроса на подписку на определённого пользователя.
+    """Обработка запросов на подписку и отмену подписки.
 
     Args:
         request: Передаваемый запрос.
-        username: логин автора, на которого подписываются
+        pk: id автора.
 
     Returns:
-        Рендер страницы редактирования поста.
+        Информацию ою авторе: в случае подписки.
+        Ничего: в случае удаления подписки.
+        Информацию об ошибке: в прочих случаях.
     """
     following = get_object_or_404(User, id=pk)
     if request.method == 'POST':
@@ -55,14 +57,13 @@ def follow_unfollow(
 
 @api_view(['GET'])
 def get_followings(request: AuthenticatedHttpRequest) -> HttpResponse:
-    """Обработка запроса на подписку на определённого пользователя.
+    """Обработка запроса на получение списка подписок.
 
     Args:
         request: Передаваемый запрос.
-        username: логин автора, на которого подписываются
 
     Returns:
-        Рендер страницы редактирования поста.
+        Список подписок пользователя.
     """
     user = request.user
     followings = user.followings

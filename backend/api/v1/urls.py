@@ -18,6 +18,16 @@ urlpatterns = [
         views.favorite,
         name='favorite',
     ),
+    path(
+        'recipes/<int:pk>/shopping_cart/',
+        views.purchase,
+        name='purchase',
+    ),
+    path(
+        'recipes/download_shopping_cart/',
+        views.shopping_cart,
+        name='shopping_cart',
+    ),
     path('', include(router.urls)),
     path('', include('users.urls')),
 ]
