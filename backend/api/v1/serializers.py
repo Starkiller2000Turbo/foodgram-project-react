@@ -23,7 +23,7 @@ class IngredientNestedSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения модели ингредиента."""
 
     id = serializers.IntegerField(read_only=False)
-    amount = serializers.IntegerField(default=0)
+    amount = serializers.IntegerField(default=1)
     name = serializers.CharField(read_only=True)
     measurement_unit = serializers.CharField(read_only=True)
 
@@ -75,11 +75,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для модели рецепта."""
 
     author = UserReadSerializer(read_only=True)
-    is_favorited = serializers.BooleanField(read_only=True, default=True)
-    is_in_shopping_cart = serializers.BooleanField(
-        read_only=True,
-        default=True,
-    )
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
     image = Base64ImageField(required=False, allow_null=True)
     ingredients = IngredientNestedSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
@@ -117,6 +114,28 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         representation['tags'] = TagSerializer(instance.tags, many=True).data
         return representation
+
+    def get_is_favorited(self, obj: Recipe) -> bool:
+        """Формирование значения поля is_favorited.
+
+        Args:
+            obj: Модель рецепта.
+
+        Returns:
+            Наличие данного рецепта в избранном.
+        """
+        return self.context['request'].user in obj.selected.all()
+
+    def get_is_in_shopping_cart(self, obj: Recipe) -> bool:
+        """Формирование значения поля is_in_shopping_cart.
+
+        Args:
+            obj: Модель рецепта.
+
+        Returns:
+            Наличие данного рецепта в списке покупок.
+        """
+        return self.context['request'].user in obj.buyers.all()
 
     def validate_ingredients(
         self,
@@ -194,6 +213,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             Созданную модель рецепта
         """
         ingredients_data = validated_data.pop('ingredients', [])
+        validated_data.pop('is_favorited', [])
+        validated_data.pop('is_in_shopping_cart', [])
         tags = validated_data.pop('tags', [])
         recipe = Recipe.objects.create(**validated_data)
         if ingredients_data:

@@ -1,10 +1,10 @@
 from typing import Any, Dict, List
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, serializers, viewsets
+from rest_framework import serializers, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -14,7 +14,9 @@ from api.v1.serializers import (
     RecipeSerializer,
     TagSerializer,
 )
+from core.filters import NameStartsSearchFilter
 from core.types import AuthenticatedHttpRequest
+from core.utils import BooleanNone
 from recipes.models import Ingredient, Recipe, Tag
 from recipes.serializers import RecipeNestedSerializer
 from users.models import Favorite, Purchase
@@ -27,8 +29,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = (ReadOnly,)
     pagination_class = None
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    filter_backends = (NameStartsSearchFilter,)
+    search_fields = ('^name',)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -38,8 +40,6 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (ReadOnly,)
     pagination_class = None
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name', 'color')
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -73,10 +73,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """
         queryset = super().filter_queryset(queryset)
         tags = self.request.query_params.get('tags', None)
-
-        if tags is not None:
+        if tags:
             queryset = queryset.filter(tags__slug__contains=tags)
-
+        is_favorited = BooleanNone(
+            self.request.query_params.get('is_favorited', None),
+        )
+        if is_favorited:
+            queryset = queryset.filter(
+                selected__username__contains=self.request.user.username,
+            )
+        elif is_favorited is False:
+            queryset = queryset.filter(
+                ~Q(selected__username__contains=self.request.user.username),
+            )
+        is_in_shopping_cart = BooleanNone(
+            self.request.query_params.get('is_in_shopping_cart', None),
+        )
+        if is_in_shopping_cart:
+            queryset = queryset.filter(
+                buyers__username__contains=self.request.user.username,
+            )
+        elif is_in_shopping_cart is False:
+            queryset = queryset.filter(
+                ~Q(buyers__username__contains=self.request.user.username),
+            )
+        author_id = self.request.query_params.get('author', None)
+        if author_id and author_id.isdigit():
+            queryset = queryset.filter(author__id=author_id)
         return queryset
 
 
@@ -188,7 +211,7 @@ def shopping_cart(request: AuthenticatedHttpRequest) -> HttpResponse:
                 ]
     file_data = ''
     for key in cart.keys():
-        file_data += f'{key} ({cart[key][0]})- {cart[key][1]}\n'
+        file_data += f'·{key} ({cart[key][0]})- {cart[key][1]}\n'
     response = HttpResponse(
         file_data,
         content_type='application/text charset=utf-8',

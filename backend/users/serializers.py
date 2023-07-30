@@ -1,3 +1,5 @@
+from typing import Dict, List, Union
+
 from rest_framework import serializers
 
 from recipes.serializers import RecipeNestedSerializer
@@ -49,7 +51,7 @@ class UserReadSerializer(serializers.ModelSerializer):
 class FollowingSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения подписки."""
 
-    recipes = RecipeNestedSerializer(many=True)
+    recipes = serializers.SerializerMethodField('paginated_recipes')
     recipes_count = serializers.IntegerField(source='recipes.count')
     is_subscribed = serializers.SerializerMethodField()
 
@@ -76,3 +78,21 @@ class FollowingSerializer(serializers.ModelSerializer):
             Наличие подписки текущего пользователя на данного.
         """
         return self.context['request'].user in obj.followers.all()
+
+    def paginated_recipes(self, obj: User) -> List[Dict[str, Union[str, int]]]:
+        """Формирование списка рецептов пользователя.
+
+        Args:
+            obj: Модель пользователя.
+
+        Returns:
+            Список рецептов пользователя.
+        """
+        recipes_limit = self.context['request'].query_params.get(
+            'recipes_limit',
+        )
+        if recipes_limit:
+            recipes = obj.recipes.order_by('id')[: int(recipes_limit)]
+        else:
+            recipes = obj.recipes.all()
+        return RecipeNestedSerializer(recipes, many=True).data
