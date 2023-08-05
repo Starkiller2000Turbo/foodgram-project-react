@@ -29,7 +29,7 @@ test:
 	$(MANAGE) test $(WORKDIR)
 
 shell:
-	$(MANAGE) shell 
+	$(MANAGE) shell
 
-venv:
-	source venv/Scripts/activate
+import:
+	$(MANAGE) import_ingredients

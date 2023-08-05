@@ -135,3 +135,7 @@ TEXT_LENGTH = 150
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = str(BASE_DIR / 'media')
+
+DATA_IMPORT_LOCATION = str(
+    (BASE_DIR.parent / 'data/'),
+)
