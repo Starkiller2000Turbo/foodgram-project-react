@@ -31,6 +31,7 @@ class UserReadSerializer(serializers.ModelSerializer):
             'email',
             'id',
             'username',
+            'password',
             'first_name',
             'last_name',
             'is_subscribed',
