@@ -5,8 +5,9 @@ from django.http import HttpRequest
 
 from users.models import User
 
-ListSerializerData = List[OrderedDict[str, Union[str, int]]]
 SerializerData = OrderedDict[str, Union[str, int]]
+SerializerStrData = OrderedDict[str, str]
+ListSerializerData = List[SerializerData]
 ComplexSerializerData = OrderedDict[str, Any]
 
 

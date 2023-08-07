@@ -1,12 +1,10 @@
-import os
 from pathlib import Path
+
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv(
-    'SECRET_KEY',
-    'django-insecure-e_dqo_=rq-^s67cw_$yj#-+4%wi&0=f^8$3yk_)!)s+nrf)%1f',
-)
+SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = True
 
@@ -22,9 +20,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'django_filters',
-    'djoser',
-    'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework',
+    'djoser',
 
     'api.apps.ApiConfig',
     'core.apps.CoreConfig',
@@ -120,7 +118,6 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'PERMISSIONS': {
-        'user': ['rest_framework.permissions.AllowAny'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
     'SERIALIZERS': {

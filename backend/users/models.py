@@ -18,14 +18,10 @@ class User(AbstractUser):
     first_name = models.CharField(  # type: ignore[assignment]
         verbose_name='Имя',
         max_length=150,
-        blank=True,
-        null=True,
     )
     last_name = models.CharField(  # type: ignore[assignment]
         verbose_name='Фамилия',
         max_length=150,
-        blank=True,
-        null=True,
     )
     password = models.CharField(
         verbose_name='Пароль',
@@ -47,6 +43,7 @@ class User(AbstractUser):
         through='Purchase',
         related_name='buyers',
     )
+    REQUIRED_FIELDS = ['email', 'first_name', 'last_name', 'password']
 
     class Meta:
         ordering = ('id',)
