@@ -1,9 +1,10 @@
-import os
 from pathlib import Path
+
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', '')
+SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = True
 
@@ -19,9 +20,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'django_filters',
-    'djoser',
-    'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework',
+    'djoser',
 
     'api.apps.ApiConfig',
     'core.apps.CoreConfig',
@@ -63,11 +64,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'django'),
-        'USER': os.getenv('POSTGRES_USER', 'django'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', 5432),
+        'NAME': config('POSTGRES_DB', default='django'),
+        'USER': config('POSTGRES_USER', default='django'),
+        'PASSWORD': config('POSTGRES_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default=''),
+        'PORT': config('DB_PORT', default=5432),
     },
 }
 
@@ -123,7 +124,6 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'PERMISSIONS': {
-        'user': ['rest_framework.permissions.AllowAny'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
     'SERIALIZERS': {

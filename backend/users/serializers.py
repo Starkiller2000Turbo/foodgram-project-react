@@ -2,6 +2,7 @@ from typing import Dict, List, Union
 
 from rest_framework import serializers
 
+from core.types import SerializerStrData
 from recipes.serializers import RecipeNestedSerializer
 from users.models import User
 
@@ -18,6 +19,21 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'password',
         )
+
+    def create(self, validated_data: SerializerStrData) -> User:
+        """Метод для создания пользователя с хэшированным паролем.
+
+        Args:
+            validated_data: Данные пользователя, прошедшие валидацию.
+
+        Returns:
+            Созданную модель пользователя.
+        """
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
 
 
 class UserReadSerializer(serializers.ModelSerializer):

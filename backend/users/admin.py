@@ -1,6 +1,8 @@
 from typing import List
 
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
+from django.contrib.auth.models import Group
 
 from users.models import User
 
@@ -24,7 +26,7 @@ class PurchaseInlineAdmin(admin.TabularInline):
     model = User.purchases.through
 
 
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(DefaultUserAdmin):
     """Представление модели пользователя в админ-зоне."""
 
     list_display = (
@@ -81,3 +83,4 @@ class UserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(User, UserAdmin)
+admin.site.unregister(Group)

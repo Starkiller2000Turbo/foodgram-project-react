@@ -1,2 +1,0 @@
-# docker run --name db --env-file .env -v pg_data:/var/lib/postgresql/data postgres:13.10
-# docker run --env-file .env --net foodgram-network --name foodgram_backend_container -p 8000:8000 foodgram_backend 
