@@ -4,10 +4,12 @@ from users import views
 
 app_name = '%(app_label)s'
 
+following_list = views.FollowingViewSet.as_view({'get': 'list'})
+
 urlpatterns = [
     path(
         'users/subscriptions/',
-        views.get_followings,
+        following_list,
         name='get_followings',
     ),
     path(

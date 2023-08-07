@@ -1,8 +1,11 @@
+from django.db.models import QuerySet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from core.permissions import ReadOnly
 from core.types import AuthenticatedHttpRequest
 from users.models import Following, User
 from users.serializers import FollowingSerializer
@@ -30,7 +33,6 @@ def follow_unfollow(
             following != request.user
             and request.user not in following.followers.all()
         ):
-            print(following.followers.all())
             Following.objects.create(following=following, user=request.user)
             return Response(
                 FollowingSerializer(
@@ -55,22 +57,16 @@ def follow_unfollow(
     return Response()
 
 
-@api_view(['GET'])
-def get_followings(request: AuthenticatedHttpRequest) -> HttpResponse:
-    """Обработка запроса на получение списка подписок.
+class FollowingViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для модели ингредиента."""
 
-    Args:
-        request: Передаваемый запрос.
+    serializer_class = FollowingSerializer
+    permission_classes = (ReadOnly,)
 
-    Returns:
-        Список подписок пользователя.
-    """
-    user = request.user
-    followings = user.followings
-    return Response(
-        FollowingSerializer(
-            followings,
-            many=True,
-            context={'request': request},
-        ).data,
-    )
+    def get_queryset(self) -> QuerySet:
+        """Функция для получения подписок пользователя.
+
+        Returns:
+            Queryset, содержащий подписки пользователя.
+        """
+        return self.request.user.followings.all()
