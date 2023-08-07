@@ -29,10 +29,11 @@ services:
       - ../frontend/:/app/result_build/
   nginx:
     image: nginx:1.19.3
+    depends_on:
+      - frontend
     ports:
       - "80:80"
     volumes:
-      - backend_static:/usr/share/nginx/html/static/
       - ../data/:/usr/share/nginx/html/api/data/
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
