@@ -17,7 +17,10 @@ class Command(BaseCommand):
             *args: Передаваемые позиционные аргументы.
             **options: Передаваемые именованные аргументы.
         """
-        print('Importing data from:', settings.DATA_IMPORT_LOCATION)
+        print(  # noqa: T201
+            'Importing data from:',
+            settings.DATA_IMPORT_LOCATION,
+        )
         with open(
             f'{settings.DATA_IMPORT_LOCATION}/ingredients.csv',
             'r',
@@ -36,11 +39,13 @@ class Command(BaseCommand):
                             'measurement_unit',
                         ],
                     )
-                    print(obj)
+                    print(obj)  # noqa: T201
                 else:
                     obj = Ingredient()
                     obj.name = name
                     obj.measurement_unit = measurement_unit
                     obj.save()
-                    print(obj)
-            print(f'Import complete, imported {counter} products')
+                    print(obj)  # noqa: T201
+            print(  # noqa: T201
+                f'Import complete, imported {counter} products',
+            )

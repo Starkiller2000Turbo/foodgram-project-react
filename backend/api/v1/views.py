@@ -8,13 +8,13 @@ from rest_framework import serializers, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from api.v1.permissions import AuthorOrReadOnly, ReadOnly
 from api.v1.serializers import (
     IngredientSerializer,
     RecipeSerializer,
     TagSerializer,
 )
 from core.filters import NameStartsSearchFilter
+from core.permissions import AuthorOrReadOnly, ReadOnly
 from core.types import AuthenticatedHttpRequest
 from core.utils import BooleanNone
 from recipes.models import Ingredient, Recipe, Tag
