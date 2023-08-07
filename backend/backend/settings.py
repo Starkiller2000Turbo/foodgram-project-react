@@ -140,5 +140,5 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = str(BASE_DIR / 'media')
 
 DATA_IMPORT_LOCATION = str(
-    (BASE_DIR.parent / 'usr/share/nginx/html/api/data/'),
+    (BASE_DIR / 'data/'),
 )
