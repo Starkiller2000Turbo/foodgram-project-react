@@ -1,8 +1,8 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from core.models import AuthorTextModel
 from recipes.validators import validate_color
+from users.models import User
 
 
 class Ingredient(models.Model):
@@ -44,18 +44,17 @@ class Tag(models.Model):
         return self.name
 
 
-class Recipe(AuthorTextModel):
+class Recipe(models.Model):
     """Модель рецепта."""
 
-    tags = models.ManyToManyField(
-        Tag,
-        through='RecipeTag',
-        verbose_name='тег',
+    author = models.ForeignKey(
+        User,
+        verbose_name='автор',
+        on_delete=models.CASCADE,
     )
-    ingredients = models.ManyToManyField(
-        Ingredient,
-        through='RecipeIngredient',
-        verbose_name='ингредиент',
+    text = models.TextField(
+        verbose_name='описание',
+        help_text='Введите текст',
     )
     image = models.ImageField(
         upload_to='recipes/images/',
@@ -94,23 +93,19 @@ class RecipeTag(models.Model):
         Tag,
         on_delete=models.CASCADE,
         verbose_name='тег',
+        related_name='recipes',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='рецепт',
+        related_name='tags',
     )
 
     class Meta:
         verbose_name = 'Тег рецепта'
         verbose_name_plural = 'Теги рецепта'
-        default_related_name = 'recipe_tags'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['tag', 'recipe'],
-                name='recipe_tag',
-            ),
-        ]
+        unique_together = ('tag', 'recipe')
 
     def __str__(self) -> str:
         """Задание текстового представления произведения.
@@ -128,24 +123,20 @@ class RecipeIngredient(models.Model):
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name='ингредиент',
+        related_name='recipes',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='рецепт',
+        related_name='ingredients',
     )
-    amount = models.PositiveIntegerField(default=0)
+    amount = models.PositiveIntegerField(default=1)
 
     class Meta:
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
-        default_related_name = 'recipe_ingredients'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['ingredient', 'recipe'],
-                name='recipe_ingredient',
-            ),
-        ]
+        unique_together = ('ingredient', 'recipe')
 
     def __str__(self) -> str:
         """Задание текстового представления произведения.

@@ -43,7 +43,8 @@ class User(AbstractUser):
         through='Purchase',
         related_name='buyers',
     )
-    REQUIRED_FIELDS = ['email', 'first_name', 'last_name', 'password']
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
+    USERNAME_FIELD = 'email'
 
     class Meta:
         ordering = ('id',)

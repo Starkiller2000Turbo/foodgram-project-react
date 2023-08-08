@@ -1,16 +1,16 @@
 from typing import Any, Dict, List
 
-from django.db.models import Q, QuerySet
+from django.db.models import Exists, OuterRef, Q, QuerySet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import serializers, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from api.v1.serializers import (
     IngredientSerializer,
-    RecipeSerializer,
+    RecipeWriteSerializer,
     TagSerializer,
 )
 from core.filters import NameStartsSearchFilter
@@ -46,21 +46,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет, обрабатывающий запросы к рецептам."""
 
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeWriteSerializer
     permission_classes = [AuthorOrReadOnly]
     filter_backends = (DjangoFilterBackend,)
 
-    def perform_create(self, serializer: serializers.ModelSerializer) -> None:
-        """Автоматическое добавление автора и логических полей.
+    def get_queryset(self) -> QuerySet:
+        """Функция для добавления к рецептам дополнительных полей.
 
-        Args:
-            serializer: сериализатор, содержащий информацию о рецепте.
+        Returns:
+            QuerySet, содержащий рецепты с дополнительными полями.
         """
-        serializer.save(
-            author=self.request.user,
-            is_favorited=False,
-            is_in_shopping_cart=False,
+        queryset = super(RecipeViewSet, self).get_queryset()
+        user = self.request.user
+        recipes = queryset.annotate(
+            is_in_shopping_cart=Exists(
+                Purchase.objects.filter(
+                    user=user,
+                    recipe__name=OuterRef('name'),
+                ),
+            ),
+            is_favorited=Exists(
+                Favorite.objects.filter(
+                    user=user,
+                    recipe__name=OuterRef('name'),
+                ),
+            ),
         )
+        return recipes
 
     def filter_queryset(self, queryset: QuerySet) -> QuerySet:
         """Фильтрация списка выдаваемых элементов по параметрам.
@@ -198,16 +210,16 @@ def shopping_cart(request: AuthenticatedHttpRequest) -> HttpResponse:
     cart: Dict[str, List[Any]] = dict()
     purchases = request.user.purchases.all()
     for purchase in purchases:
-        ingredients = purchase.ingredients.all()
+        ingredients = Ingredient.objects.filter(recipes__recipe=purchase)
         for ingredient in ingredients:
             if ingredient.name in cart.keys():
-                cart[ingredient.name][1] += ingredient.recipe_ingredients.get(
+                cart[ingredient.name][1] += ingredient.recipes.get(
                     recipe=purchase,
                 ).amount
             else:
                 cart[ingredient.name] = [
                     ingredient.measurement_unit,
-                    ingredient.recipe_ingredients.get(recipe=purchase).amount,
+                    ingredient.recipes.get(recipe=purchase).amount,
                 ]
     file_data = ''
     for key in cart.keys():

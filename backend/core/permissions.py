@@ -2,8 +2,6 @@ from django.db.models import Model
 from django.http import HttpRequest
 from rest_framework import permissions, viewsets
 
-from core.models import AuthorTextModel
-
 
 class ReadOnly(permissions.BasePermission):
     """Разрешение на чтение всеми пользователями."""
@@ -69,7 +67,7 @@ class AuthorOrReadOnly(permissions.BasePermission):
         self,
         request: HttpRequest,
         view: viewsets.ModelViewSet,
-        obj: AuthorTextModel,
+        obj: Model,
     ) -> bool:
         """Проверка авторства или безопасности запроса.
 

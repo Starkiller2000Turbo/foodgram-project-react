@@ -2,7 +2,7 @@ from typing import List
 
 from django.contrib import admin
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
+from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 
 
 class IngredientAdmin(admin.ModelAdmin):
@@ -26,7 +26,7 @@ class TagAdmin(admin.ModelAdmin):
 class IngredientInlineAdmin(admin.TabularInline):
     """Представление модели ингредиента в рецепте."""
 
-    model = Recipe.ingredients.through
+    model = RecipeIngredient
     readonly_fields = ('measurement_unit',)
 
     def measurement_unit(self, obj: RecipeIngredient) -> str:
@@ -44,7 +44,7 @@ class IngredientInlineAdmin(admin.TabularInline):
 class TagInlineAdmin(admin.TabularInline):
     """Представление модели тега в рецепте."""
 
-    model = Recipe.tags.through
+    model = RecipeTag
 
 
 class RecipeAdmin(admin.ModelAdmin):
@@ -52,6 +52,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     list_display = (
         'name',
+        'id',
         'author',
         'text',
         'image',
@@ -60,10 +61,10 @@ class RecipeAdmin(admin.ModelAdmin):
         'get_ingredients',
     )
     search_fields = ('name', 'text')
-    list_filter = ('name', 'author', 'tags')
+    list_filter = ('name', 'author', 'tags__tag')
     empty_value_display = '-пусто-'
     inlines = [IngredientInlineAdmin, TagInlineAdmin]
-    readonly_fields = ('favorited',)
+    readonly_fields = ('favorited', 'id')
 
     def get_tags(self, obj: Recipe) -> List[str]:
         """Отображение списка тегов рецепта.
@@ -74,7 +75,7 @@ class RecipeAdmin(admin.ModelAdmin):
         Returns:
             Список полей slug используемых тегов.
         """
-        return [tag.slug for tag in obj.tags.all()]
+        return list(obj.tags.all().values_list('tag__slug', flat=True))
 
     def get_ingredients(self, obj: Recipe) -> List[str]:
         """Отображение списка ингредиентов рецепта.
@@ -85,7 +86,9 @@ class RecipeAdmin(admin.ModelAdmin):
         Returns:
             Список полей name используемых ингредиентов.
         """
-        return [ingredient.name for ingredient in obj.ingredients.all()]
+        return list(
+            obj.ingredients.all().values_list('ingredient__name', flat=True),
+        )
 
     def favorited(self, obj: Recipe) -> int:
         """Отображение количества добавлений рецепта в избранное.

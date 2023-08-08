@@ -1,7 +1,7 @@
 from django.db.models import QuerySet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -61,7 +61,10 @@ class FollowingViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet для модели ингредиента."""
 
     serializer_class = FollowingSerializer
-    permission_classes = (permissions.IsAuthenticated, ReadOnly,)
+    permission_classes = (
+        permissions.IsAuthenticated,
+        ReadOnly,
+    )
 
     def get_queryset(self) -> QuerySet:
         """Функция для получения подписок пользователя.
