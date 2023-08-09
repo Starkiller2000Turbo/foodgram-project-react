@@ -145,3 +145,38 @@ class RecipeIngredient(models.Model):
             Строковое представление связи рецепта и ингредиента.
         """
         return f'{self.recipe.name}, ингредиент - {self.ingredient.name}'
+
+
+class Purchase(models.Model):
+    """Модель покупки."""
+
+    user = models.ForeignKey(
+        User,
+        verbose_name='пользователь',
+        on_delete=models.CASCADE,
+        related_name='purchases',
+    )
+    recipe = models.ForeignKey(
+        'recipes.Recipe',
+        verbose_name='избранное',
+        on_delete=models.CASCADE,
+        related_name='buyers',
+    )
+
+    class Meta:
+        verbose_name = 'Покупка'
+        verbose_name_plural = 'Покупки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_user_purchase',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        """Задание текстового представления покупки.
+
+        Returns:
+            Строку вида 'Список покупок <пользователь> содержит <рецепт>'
+        """
+        return f'Список покупок {self.user} содержит {self.recipe}'

@@ -27,22 +27,7 @@ class User(AbstractUser):
         verbose_name='Пароль',
         max_length=150,
     )
-    followings = models.ManyToManyField(
-        'self',
-        through='Following',
-        symmetrical=False,
-        related_name='followers',
-    )
-    favorites = models.ManyToManyField(
-        'recipes.Recipe',
-        through='Favorite',
-        related_name='selected',
-    )
-    purchases = models.ManyToManyField(
-        'recipes.Recipe',
-        through='Purchase',
-        related_name='buyers',
-    )
+
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
     USERNAME_FIELD = 'email'
 
@@ -72,13 +57,13 @@ class Following(models.Model):
     user = models.ForeignKey(
         User,
         verbose_name='пользователь',
-        related_name='follower',
+        related_name='followers',
         on_delete=models.CASCADE,
     )
     following = models.ForeignKey(
         User,
         verbose_name='автор',
-        related_name='following',
+        related_name='followings',
         on_delete=models.CASCADE,
     )
 
@@ -112,11 +97,13 @@ class Favorite(models.Model):
         User,
         verbose_name='пользователь',
         on_delete=models.CASCADE,
+        related_name='favorites',
     )
     recipe = models.ForeignKey(
         'recipes.Recipe',
         verbose_name='избранное',
         on_delete=models.CASCADE,
+        related_name='favorited',
     )
 
     class Meta:
@@ -136,36 +123,3 @@ class Favorite(models.Model):
             Строку вида 'Избранное <пользователь> содержит <рецепт>'
         """
         return f'Избранное {self.user} содержит {self.recipe}'
-
-
-class Purchase(models.Model):
-    """Модель подписки."""
-
-    user = models.ForeignKey(
-        User,
-        verbose_name='пользователь',
-        on_delete=models.CASCADE,
-    )
-    recipe = models.ForeignKey(
-        'recipes.Recipe',
-        verbose_name='избранное',
-        on_delete=models.CASCADE,
-    )
-
-    class Meta:
-        verbose_name = 'Покупка'
-        verbose_name_plural = 'Покупки'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_user_purchase',
-            ),
-        ]
-
-    def __str__(self) -> str:
-        """Задание текстового представления покупки.
-
-        Returns:
-            Строку вида 'Список покупок <пользователь> содержит <рецепт>'
-        """
-        return f'Список покупок {self.user} содержит {self.recipe}'

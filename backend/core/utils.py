@@ -1,25 +1,16 @@
-from typing import Union
+from django.db.models import QuerySet
+from django.http import HttpResponse
 
 
-def BooleanNone(element: Union[str, int]) -> Union[None, bool]:
-    """Функция преобразования значения в False, True и None.
-
-    Agrs:
-        string: Элемент, который необходимо преобозовать.
-
-    Returns:
-        True: Если элемент имеет значения 1, '1', 'yes', 'true'.
-        False: Если элемент имеет значения 0, '0', 'no', 'false'.
-        None: В других случаях.
-    """
-    response = None
-    if element == 0:
-        response = False
-    if element == 1:
-        response = True
-    if isinstance(element, str):
-        if element.lower() in ['0', 'no', 'false']:
-            response = False
-        if element.lower() in ['1', 'yes', 'true']:
-            response = True
+def shopping_file(cart: QuerySet) -> HttpResponse:
+    file_data = ''
+    for purchase in cart:
+        file_data += f'·{purchase.get("ingredient__name")} ({purchase.get("ingredient__measurement_unit")})- {purchase.get("amount")}\n'
+    response = HttpResponse(
+        file_data,
+        content_type='application/text charset=utf-8',
+    )
+    response[
+        'Content-Disposition'
+    ] = 'attachment; filename="shopping_cart.txt"'
     return response

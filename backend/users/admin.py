@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
@@ -9,19 +9,20 @@ from django.forms import ModelChoiceField
 from django.http import HttpRequest
 from django.urls import resolve
 
-from users.models import User
+from recipes.models import Purchase
+from users.models import Favorite, Following, User
 
 
 class FavoriteInlineAdmin(admin.TabularInline):
     """Представление модели пользователя в админ-зоне."""
 
-    model = User.favorites.through
+    model = Favorite
 
 
 class FollowingInlineAdmin(admin.TabularInline):
     """Представление модели пользователя в админ-зоне."""
 
-    model = User.followings.through
+    model = Following
     fk_name = 'user'
 
     def get_parent_object_from_request(
@@ -74,28 +75,31 @@ class FollowingInlineAdmin(admin.TabularInline):
 class PurchaseInlineAdmin(admin.TabularInline):
     """Представление модели пользователя в админ-зоне."""
 
-    model = User.purchases.through
+    model = Purchase
 
 
+@admin.register(User)
 class UserAdmin(DefaultUserAdmin):
     """Представление модели пользователя в админ-зоне."""
 
     list_display = (
         'username',
+        'id',
         'email',
         'first_name',
         'last_name',
-        'password',
         'get_favorites',
         'get_followings',
         'get_purchases',
     )
     search_fields = ('username', 'email')
     list_filter = ('username', 'email')
+    readonly_fields = ('id',)
     empty_value_display = '-пусто-'
     inlines = [FavoriteInlineAdmin, FollowingInlineAdmin, PurchaseInlineAdmin]
 
-    def get_favorites(self, obj: User) -> List[str]:
+    @admin.display(description='Избранное')
+    def get_favorites(self, obj: User) -> int:
         """Отображение списка избранного пользователя.
 
         Args:
@@ -104,9 +108,10 @@ class UserAdmin(DefaultUserAdmin):
         Returns:
             Список избранных рецептов пользователя.
         """
-        return [recipe.name for recipe in obj.favorites.all()]
+        return obj.favorites.all().count()
 
-    def get_followings(self, obj: User) -> List[str]:
+    @admin.display(description='Подписки')
+    def get_followings(self, obj: User) -> int:
         """Отображение списка подписок пользователя.
 
         Args:
@@ -115,9 +120,10 @@ class UserAdmin(DefaultUserAdmin):
         Returns:
             Список подписок пользователя.
         """
-        return [user.username for user in obj.followings.all()]
+        return obj.followings.all().count()
 
-    def get_purchases(self, obj: User) -> List[str]:
+    @admin.display(description='Список покупок')
+    def get_purchases(self, obj: User) -> int:
         """Отображение списка покупок пользователя.
 
         Args:
@@ -126,12 +132,7 @@ class UserAdmin(DefaultUserAdmin):
         Returns:
             Список покупок пользователя.
         """
-        return [recipe.name for recipe in obj.purchases.all()]
-
-    get_favorites.short_description = 'Избранное'  # type: ignore
-    get_followings.short_description = 'Подписки'  # type: ignore
-    get_purchases.short_description = 'Список покупок'  # type: ignore
+        return obj.purchases.all().count()
 
 
-admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)

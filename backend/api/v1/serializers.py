@@ -1,13 +1,188 @@
 from collections import OrderedDict
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 from core.serializers import Base64ImageField
-from core.types import ComplexSerializerData
-from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
-from users.serializers import UserReadSerializer
+from core.types import ComplexSerializerData, SerializerData, SerializerStrData
+from recipes.models import (
+    Ingredient,
+    Purchase,
+    Recipe,
+    RecipeIngredient,
+    RecipeTag,
+    Tag,
+)
+from users.models import Favorite, User
+
+
+class FavoriteSerializer(serializers.Serializer):
+    """Сериализатор для модели избранного."""
+
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all())
+
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe')
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('user', 'recipe'),
+                message='Уже в избранном.',
+            ),
+        ]
+
+    def create(self, validated_data: SerializerData) -> Favorite:
+        """Функция для добавления рецепта в избранное.
+
+        Args:
+            validated_data: Валидные данные.
+
+        Returns:
+            Объект избранного.
+        """
+        return Favorite.objects.create(**validated_data)
+
+
+class PurchaseSerializer(serializers.Serializer):
+    """Сериализатор для модели избранного."""
+
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all())
+
+    class Meta:
+        model = Purchase
+        fields = ('user', 'recipe')
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('user', 'recipe'),
+                message='Уже в списке покупок.',
+            ),
+        ]
+
+    def create(self, validated_data: SerializerData) -> Purchase:
+        """Функция для добавления рецепта в список покупок.
+
+        Args:
+            validated_data: Валидные данные.
+
+        Returns:
+            Объект списка покупок.
+        """
+        return Purchase.objects.create(**validated_data)
+
+
+class UserReadSerializer(serializers.ModelSerializer):
+    """Сериализатор модели пользователя."""
+
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+        )
+
+    def get_is_subscribed(self, obj: User) -> bool:
+        """Формирование значения поля is_subscribed.
+
+        Args:
+            obj: Модель пользователя.
+
+        Returns:
+            Наличие подписки текущего пользователя на данного.
+        """
+        return self.context['request'].user in obj.followers.all()
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор модели пользователя."""
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'password',
+        )
+    
+    def to_representation(self, instance):
+        return UserReadSerializer(context=self.context).to_representation(instance)
+
+    def create(self, validated_data: SerializerStrData) -> User:
+        """Метод для создания пользователя с хэшированным паролем.
+
+        Args:
+            validated_data: Данные пользователя, прошедшие валидацию.
+
+        Returns:
+            Созданную модель пользователя.
+        """
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
+
+
+class FollowingSerializer(serializers.ModelSerializer):
+    """Сериализатор для отображения подписки."""
+
+    recipes = serializers.SerializerMethodField('paginated_recipes')
+    recipes_count = serializers.IntegerField(source='recipes.count')
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count',
+        )
+
+    def get_is_subscribed(self, obj: User) -> bool:
+        """Формирование значения поля is_subscribed.
+
+        Args:
+            obj: Модель пользователя.
+
+        Returns:
+            Наличие подписки текущего пользователя на данного.
+        """
+        return self.context['request'].user in obj.followers.all()
+
+    def paginated_recipes(self, obj: User) -> List[Dict[str, Union[str, int]]]:
+        """Формирование списка рецептов пользователя.
+
+        Args:
+            obj: Модель пользователя.
+
+        Returns:
+            Список рецептов пользователя.
+        """
+        recipes_limit = self.context['request'].query_params.get(
+            'recipes_limit',
+        )
+        if recipes_limit:
+            recipes = obj.recipes.order_by('id')[: int(recipes_limit)]
+        else:
+            recipes = obj.recipes.all()
+        return RecipeNestedSerializer(recipes, many=True).data
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -79,6 +254,21 @@ class TagNestedSerializer(serializers.ModelSerializer):
             'color',
             'slug',
         )
+
+
+class RecipeNestedSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели рецепта."""
+
+    image = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time',
+        )
+        model = Recipe
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):

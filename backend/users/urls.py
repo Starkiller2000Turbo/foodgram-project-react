@@ -1,6 +1,6 @@
 from django.urls import include, path
 
-from users import views
+from api.v1 import views
 
 app_name = '%(app_label)s'
 
