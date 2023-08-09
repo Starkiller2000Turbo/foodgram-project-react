@@ -17,7 +17,9 @@ class RecipeFilterForm(Form):
             ValidationError: Если данные не валидны.
         """
         cleaned_data = super(RecipeFilterForm, self).clean()
-        is_favorited = cleaned_data.get('is_favorited')
+        is_favorited = cleaned_data.get(  # type:ignore[union-attr]
+            'is_favorited',
+        )
 
         if is_favorited not in [0, 1, None]:
             raise ValidationError(
@@ -36,7 +38,9 @@ class RecipeFilterForm(Form):
             ValidationError: Если данные не валидны.
         """
         cleaned_data = super(RecipeFilterForm, self).clean()
-        is_in_shopping_cart = cleaned_data.get('is_in_shopping_cart')
+        is_in_shopping_cart = cleaned_data.get(  # type:ignore[union-attr]
+            'is_in_shopping_cart',
+        )
 
         if is_in_shopping_cart not in [0, 1, None]:
             raise ValidationError(

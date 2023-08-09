@@ -2,11 +2,12 @@ from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Union
 
 from django.core.exceptions import ValidationError
-from rest_framework import serializers
+from rest_framework import exceptions, serializers
 
 from core.serializers import Base64ImageField
 from core.types import ComplexSerializerData, SerializerData, SerializerStrData
 from recipes.models import (
+    Favorite,
     Ingredient,
     Purchase,
     Recipe,
@@ -14,7 +15,7 @@ from recipes.models import (
     RecipeTag,
     Tag,
 )
-from users.models import Favorite, User
+from users.models import Following, User
 
 
 class FavoriteSerializer(serializers.Serializer):
@@ -75,6 +76,54 @@ class PurchaseSerializer(serializers.Serializer):
         return Purchase.objects.create(**validated_data)
 
 
+class FollowingCreateSerializer(serializers.Serializer):
+    """Сериализатор для модели избранного."""
+
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    following = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = Following
+        fields = ('user', 'following')
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('user', 'following'),
+                message='Уже подписан.',
+            ),
+        ]
+
+    def validate(self, attrs: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Функция для валидации полей сериализатора.
+
+        Args:
+            attrs: Словарь передаваемых параметров.
+
+        Returns:
+            Словарь передаваемых параметров, если они валидны.
+
+        Raises:
+            ValidationError: Если переданные данные не валидны.
+        """
+        super().validate(attrs)
+        if attrs['user'] == attrs['following']:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя.',
+            )
+        return attrs
+
+    def create(self, validated_data: SerializerData) -> Following:
+        """Функция для добавления рецепта в список покупок.
+
+        Args:
+            validated_data: Валидные данные.
+
+        Returns:
+            Объект списка покупок.
+        """
+        return Following.objects.create(**validated_data)
+
+
 class UserReadSerializer(serializers.ModelSerializer):
     """Сериализатор модели пользователя."""
 
@@ -115,9 +164,19 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'password',
         )
-    
-    def to_representation(self, instance):
-        return UserReadSerializer(context=self.context).to_representation(instance)
+
+    def to_representation(self, instance: User) -> User:
+        """Функция для вывода информации из сериализатора.
+
+        Args:
+            instance: Объект пользователя.
+
+        Returns:
+            Представление сериализатора для чтения.
+        """
+        return UserReadSerializer(context=self.context).to_representation(
+            instance,
+        )
 
     def create(self, validated_data: SerializerStrData) -> User:
         """Метод для создания пользователя с хэшированным паролем.
@@ -135,12 +194,11 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class FollowingSerializer(serializers.ModelSerializer):
+class FollowingSerializer(UserReadSerializer):
     """Сериализатор для отображения подписки."""
 
     recipes = serializers.SerializerMethodField('paginated_recipes')
     recipes_count = serializers.IntegerField(source='recipes.count')
-    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -155,17 +213,6 @@ class FollowingSerializer(serializers.ModelSerializer):
             'recipes_count',
         )
 
-    def get_is_subscribed(self, obj: User) -> bool:
-        """Формирование значения поля is_subscribed.
-
-        Args:
-            obj: Модель пользователя.
-
-        Returns:
-            Наличие подписки текущего пользователя на данного.
-        """
-        return self.context['request'].user in obj.followers.all()
-
     def paginated_recipes(self, obj: User) -> List[Dict[str, Union[str, int]]]:
         """Формирование списка рецептов пользователя.
 
@@ -179,10 +226,17 @@ class FollowingSerializer(serializers.ModelSerializer):
             'recipes_limit',
         )
         if recipes_limit:
-            recipes = obj.recipes.order_by('id')[: int(recipes_limit)]
-        else:
-            recipes = obj.recipes.all()
-        return RecipeNestedSerializer(recipes, many=True).data
+            try:
+                recipes_limit = int(recipes_limit)
+            except ValueError:
+                raise exceptions.ParseError(
+                    'recipes_limit должен быть целым числом',
+                )
+            return RecipeNestedSerializer(
+                obj.recipes.order_by('id')[: int(recipes_limit)],
+                many=True,
+            ).data
+        return RecipeNestedSerializer(obj.recipes.all(), many=True).data
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -357,7 +411,11 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ingredient_ids = set()
         if data:
             for ingredient_data in data:
-                ingredient = ingredient_data.get('ingredient').get('id')
+                ingredient = ingredient_data.get(
+                    'ingredient',
+                ).get(  # type:ignore[union-attr]
+                    'id',
+                )
                 ingredient_id = ingredient.id
                 if ingredient_id in ingredient_ids:
                     raise ValidationError(
@@ -404,9 +462,15 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             Ingredients_data: Информация об ингредиентах.
         """
         recipeingredients = [
-            RecipeIngredient(
+            RecipeIngredient(  # type:ignore[misc]
                 recipe=instance,
-                ingredient_id=ingredient_data.get('ingredient').get('id').id,
+                ingredient_id=ingredient_data.get(
+                    'ingredient',
+                )
+                .get(  # type:ignore[union-attr]
+                    'id',
+                )
+                .id,
                 amount=ingredient_data.get('amount'),
             )
             for ingredient_data in ingredients_data

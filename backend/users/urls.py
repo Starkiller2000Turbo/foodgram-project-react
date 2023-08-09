@@ -4,17 +4,15 @@ from api.v1 import views
 
 app_name = '%(app_label)s'
 
-following_list = views.FollowingViewSet.as_view({'get': 'list'})
-
 urlpatterns = [
     path(
         'users/subscriptions/',
-        following_list,
+        views.FollowingViewSet.as_view(),
         name='get_followings',
     ),
     path(
         'users/<int:pk>/subscribe/',
-        views.follow_unfollow,
+        views.FollowingView.as_view(),
         name='follow_unfollow',
     ),
     path('', include('djoser.urls')),

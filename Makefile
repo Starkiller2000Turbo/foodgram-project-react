@@ -31,5 +31,12 @@ test:
 shell:
 	$(MANAGE) shell
 
+ingredients:
+	$(MANAGE) import_ingredients
+
+tags:
+	$(MANAGE) import_tags
+
 import:
 	$(MANAGE) import_ingredients
+	$(MANAGE) import_tags

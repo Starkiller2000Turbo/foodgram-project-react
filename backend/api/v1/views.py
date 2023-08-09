@@ -1,17 +1,17 @@
-from typing import Any, Dict, List
-
 from django.db.models import Exists, OuterRef, QuerySet, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import action, api_view
+from rest_framework import generics, permissions, status, views, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 
 from api.v1.filters import RecipeFilterSet
+from api.v1.permissions import AuthorOrReadOnly
 from api.v1.serializers import (
     FavoriteSerializer,
+    FollowingCreateSerializer,
     FollowingSerializer,
     IngredientSerializer,
     PurchaseSerializer,
@@ -19,12 +19,85 @@ from api.v1.serializers import (
     RecipeWriteSerializer,
     TagSerializer,
 )
-from api.v1.permissions import AuthorOrReadOnly
 from core.filters import NameStartsSearchFilter
 from core.types import AuthenticatedHttpRequest
 from core.utils import shopping_file
-from recipes.models import Ingredient, Purchase, Recipe, Tag, RecipeIngredient
-from users.models import Favorite, Following, User
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    Purchase,
+    Recipe,
+    RecipeIngredient,
+    Tag,
+)
+from users.models import Following, User
+
+
+class FollowingView(views.APIView):
+    """Класс для создания подписок и их удаления."""
+
+    def post(
+        self,
+        request: AuthenticatedHttpRequest,
+        pk: str,
+    ) -> HttpResponse:
+        """Функция для создания подписки на автора.
+
+        Args:
+            request: Передаваемый запрос.
+            pk: id модели автора.
+
+        Returns:
+            Данные автора, в случае успешной подписки.
+        """
+        serializer = FollowingCreateSerializer(
+            data={'user': request.user.id, 'following': pk},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            FollowingSerializer(
+                get_object_or_404(User, id=pk),
+                context={'request': request},
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def delete(
+        self,
+        request: AuthenticatedHttpRequest,
+        pk: str,
+    ) -> HttpResponse:
+        """Функция для удаления подписки на автора.
+
+        Args:
+            request: Передаваемый запрос.
+            pk: id модели автора.
+
+        Returns:
+            Статус 204.
+        """
+        get_object_or_404(
+            Following,
+            following__id=pk,
+            user=request.user,
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FollowingViewSet(generics.ListAPIView):
+    """View для получения списка подписок."""
+
+    serializer_class = FollowingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self) -> QuerySet:
+        """Функция для получения подписок пользователя.
+
+        Returns:
+            Queryset, содержащий подписки пользователя.
+        """
+        return User.objects.filter(followers__user=self.request.user)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -35,14 +108,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
     filter_backends = (NameStartsSearchFilter,)
     search_fields = ('^name',)
-
-
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """ViewSet для модели тега."""
-
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-    pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -200,66 +265,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
         Returns:
             Файл со списком покупок пользователя.
         """
-        cart = RecipeIngredient.objects.filter(recipe__buyers__user=request.user).values('ingredient__name', 'ingredient__measurement_unit').annotate(amount=Sum('amount')).order_by('ingredient__name')
+        cart = (
+            RecipeIngredient.objects.filter(
+                recipe__purchases__user=request.user,
+            )
+            .values('ingredient__name', 'ingredient__measurement_unit')
+            .annotate(amount=Sum('amount'))
+            .order_by('ingredient__name')
+        )
         return shopping_file(cart)
 
 
-@api_view(['POST', 'DELETE'])
-def follow_unfollow(
-    request: AuthenticatedHttpRequest,
-    pk: str,
-) -> HttpResponse:
-    """Обработка запросов на подписку и отмену подписки.
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для модели тега."""
 
-    Args:
-        request: Передаваемый запрос.
-        pk: id автора.
-
-    Returns:
-        Информацию ою авторе: в случае подписки.
-        Ничего: в случае удаления подписки.
-        Информацию об ошибке: в прочих случаях.
-    """
-    following = get_object_or_404(User, id=pk)
-    if request.method == 'POST':
-        if (
-            following != request.user
-            and request.user not in following.followers.all()
-        ):
-            Following.objects.create(following=following, user=request.user)
-            return Response(
-                FollowingSerializer(
-                    following,
-                    context={'request': request},
-                ).data,
-            )
-        return Response(
-            {
-                'errors': 'невозможно подписаться на самого себя'
-                'или подписаться второй раз',
-            },
-        )
-    if not Following.objects.filter(
-        following=following,
-        user=request.user,
-    ).exists():
-        return Response(
-            {'errors': 'невозможно отписаться, подписки не существует'},
-        )
-    Following.objects.filter(following=following, user=request.user).delete()
-    return Response()
-
-
-class FollowingViewSet(viewsets.ReadOnlyModelViewSet):
-    """ViewSet для модели ингредиента."""
-
-    serializer_class = FollowingSerializer
-    permission_classes = (permissions.IsAuthenticated)
-
-    def get_queryset(self) -> QuerySet:
-        """Функция для получения подписок пользователя.
-
-        Returns:
-            Queryset, содержащий подписки пользователя.
-        """
-        return self.request.user.followings.all()
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    pagination_class = None

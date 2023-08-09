@@ -1,19 +1,29 @@
+from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from recipes.validators import validate_color
+from core.constants import DEFAULT_FIELD_LENGTH
+from core.models import UserRecipeModel
 from users.models import User
 
 
 class Ingredient(models.Model):
     """Модель ингредиента."""
 
-    name = models.CharField(max_length=200, unique=True)
-    measurement_unit = models.CharField(max_length=200)
+    name = models.CharField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        verbose_name='название',
+    )
+    measurement_unit = models.CharField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        verbose_name='единица измерения',
+    )
 
     class Meta:
+        ordering = ['name']
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        unique_together = ('name', 'measurement_unit')
 
     def __str__(self) -> str:
         """Представление модели при выводе.
@@ -27,11 +37,20 @@ class Ingredient(models.Model):
 class Tag(models.Model):
     """Модель тега."""
 
-    name = models.CharField(max_length=200, unique=True)
-    color = models.CharField(max_length=7, validators=[validate_color])
-    slug = models.SlugField()
+    name = models.CharField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        unique=True,
+        verbose_name='название',
+    )
+    color = ColorField(verbose_name='цвет')
+    slug = models.SlugField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        unique=True,
+        verbose_name='слаг',
+    )
 
     class Meta:
+        ordering = ['name']
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
@@ -61,18 +80,23 @@ class Recipe(models.Model):
         unique=True,
         verbose_name='картинка',
     )
-    cooking_time = models.IntegerField(
-        validators=[MinValueValidator(1)],
+    cooking_time = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(
+                1,
+                message='Время приготовления не может быть менее 1 минуты',
+            ),
+        ],
         verbose_name='время приготовления',
     )
     name = models.CharField(
-        max_length=200,
+        max_length=DEFAULT_FIELD_LENGTH,
         verbose_name='название',
         unique=True,
     )
 
     class Meta:
-        ordering = ['id']
+        ordering = ['name']
         default_related_name = 'recipes'
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
@@ -131,7 +155,12 @@ class RecipeIngredient(models.Model):
         verbose_name='рецепт',
         related_name='ingredients',
     )
-    amount = models.PositiveIntegerField(default=1)
+    amount = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(1, message='Количество не может быть менее 1'),
+        ],
+        default=1,
+    )
 
     class Meta:
         verbose_name = 'Ингредиент рецепта'
@@ -147,36 +176,25 @@ class RecipeIngredient(models.Model):
         return f'{self.recipe.name}, ингредиент - {self.ingredient.name}'
 
 
-class Purchase(models.Model):
+class Purchase(UserRecipeModel):
     """Модель покупки."""
-
-    user = models.ForeignKey(
-        User,
-        verbose_name='пользователь',
-        on_delete=models.CASCADE,
-        related_name='purchases',
-    )
-    recipe = models.ForeignKey(
-        'recipes.Recipe',
-        verbose_name='избранное',
-        on_delete=models.CASCADE,
-        related_name='buyers',
-    )
 
     class Meta:
         verbose_name = 'Покупка'
         verbose_name_plural = 'Покупки'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_user_purchase',
-            ),
-        ]
+        default_related_name = 'purchases'
 
-    def __str__(self) -> str:
-        """Задание текстового представления покупки.
 
-        Returns:
-            Строку вида 'Список покупок <пользователь> содержит <рецепт>'
-        """
-        return f'Список покупок {self.user} содержит {self.recipe}'
+Purchase._meta.get_field('recipe').verbose_name = 'покупка'
+
+
+class Favorite(UserRecipeModel):
+    """Модель подписки."""
+
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные'
+        default_related_name = 'favorites'
+
+
+Favorite._meta.get_field('recipe').verbose_name = 'избранное'

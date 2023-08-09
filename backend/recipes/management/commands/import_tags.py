@@ -4,7 +4,7 @@ from typing import Any
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from recipes.models import Ingredient
+from recipes.models import Tag
 
 
 class Command(BaseCommand):
@@ -22,18 +22,19 @@ class Command(BaseCommand):
             settings.DATA_IMPORT_LOCATION,
         )
         with open(
-            f'{settings.DATA_IMPORT_LOCATION}/ingredients.csv',
+            f'{settings.DATA_IMPORT_LOCATION}/tags.csv',
             'r',
             encoding='utf-8-sig',
         ) as csv_file:
             counter = 0
             data = csv.reader(csv_file)
-            for name, measurement_unit in data:
-                if Ingredient.objects.get_or_create(
+            for name, color, slug in data:
+                if Tag.objects.get_or_create(
                     name=name,
-                    measurement_unit=measurement_unit,
+                    color=color,
+                    slug=slug,
                 )[1]:
                     counter += 1
             print(  # noqa: T201
-                f'Import complete, imported {counter} ingredients',
+                f'Import complete, imported {counter} tags',
             )

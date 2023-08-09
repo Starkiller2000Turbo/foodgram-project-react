@@ -2,45 +2,43 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 
+from core.constants import EMAIL_FIELD_LENGTH, USER_FIELDS_LENGTH
+
 
 class User(AbstractUser):
     """Модель пользователя."""
 
     username = models.CharField(
-        max_length=150,
+        verbose_name='логин',
+        max_length=USER_FIELDS_LENGTH,
         unique=True,
         validators=[RegexValidator(r'^[\w.@+-]+\Z')],
     )
     email = models.EmailField(
-        max_length=254,
+        verbose_name='почта',
+        max_length=EMAIL_FIELD_LENGTH,
         unique=True,
     )
     first_name = models.CharField(  # type: ignore[assignment]
-        verbose_name='Имя',
-        max_length=150,
+        verbose_name='имя',
+        max_length=USER_FIELDS_LENGTH,
     )
     last_name = models.CharField(  # type: ignore[assignment]
-        verbose_name='Фамилия',
-        max_length=150,
+        verbose_name='фамилия',
+        max_length=USER_FIELDS_LENGTH,
     )
     password = models.CharField(
-        verbose_name='Пароль',
-        max_length=150,
+        verbose_name='пароль',
+        max_length=USER_FIELDS_LENGTH,
     )
 
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
     USERNAME_FIELD = 'email'
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('username', 'email')
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['username', 'email'],
-                name='username_email',
-            ),
-        ]
 
     def __str__(self) -> str:
         """Представление модели при выводе.
@@ -57,13 +55,13 @@ class Following(models.Model):
     user = models.ForeignKey(
         User,
         verbose_name='пользователь',
-        related_name='followers',
+        related_name='followings',
         on_delete=models.CASCADE,
     )
     following = models.ForeignKey(
         User,
         verbose_name='автор',
-        related_name='followings',
+        related_name='followers',
         on_delete=models.CASCADE,
     )
 
@@ -88,38 +86,3 @@ class Following(models.Model):
             Строку вида 'Подписка <пользователь> на <автор>'
         """
         return f'Подписка {self.user} на {self.following}'
-
-
-class Favorite(models.Model):
-    """Модель подписки."""
-
-    user = models.ForeignKey(
-        User,
-        verbose_name='пользователь',
-        on_delete=models.CASCADE,
-        related_name='favorites',
-    )
-    recipe = models.ForeignKey(
-        'recipes.Recipe',
-        verbose_name='избранное',
-        on_delete=models.CASCADE,
-        related_name='favorited',
-    )
-
-    class Meta:
-        verbose_name = 'Избранное'
-        verbose_name_plural = 'Избранные'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_user_favorite',
-            ),
-        ]
-
-    def __str__(self) -> str:
-        """Задание текстового представления избранного.
-
-        Returns:
-            Строку вида 'Избранное <пользователь> содержит <рецепт>'
-        """
-        return f'Избранное {self.user} содержит {self.recipe}'

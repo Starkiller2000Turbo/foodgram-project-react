@@ -70,15 +70,15 @@ if config('DATABASES') == 'SQL':
     }
 else:
     DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('POSTGRES_DB', defaul='django'),
-        'USER': config('POSTGRES_USER', default='django'),
-        'PASSWORD': config('POSTGRES_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default=''),
-        'PORT': config('DB_PORT', default=5432)
-    },
-}
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('POSTGRES_DB', defaul='django'),
+            'USER': config('POSTGRES_USER', default='django'),
+            'PASSWORD': config('POSTGRES_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default=''),
+            'PORT': config('DB_PORT', default=5432),
+        },
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {

@@ -9,8 +9,8 @@ from django.forms import ModelChoiceField
 from django.http import HttpRequest
 from django.urls import resolve
 
-from recipes.models import Purchase
-from users.models import Favorite, Following, User
+from recipes.models import Favorite, Purchase
+from users.models import Following, User
 
 
 class FavoriteInlineAdmin(admin.TabularInline):

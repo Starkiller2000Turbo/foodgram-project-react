@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.utils.safestring import mark_safe
+from django.utils.safestring import SafeString, mark_safe
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 
@@ -8,7 +8,7 @@ from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 class IngredientAdmin(admin.ModelAdmin):
     """Представление модели ингредиента в админ-зоне."""
 
-    list_display = ('name', 'measurement_unit')
+    list_display = ('name', 'id', 'measurement_unit')
     search_fields = ('name',)
     list_filter = ('name', 'measurement_unit')
     empty_value_display = '-пусто-'
@@ -18,7 +18,7 @@ class IngredientAdmin(admin.ModelAdmin):
 class TagAdmin(admin.ModelAdmin):
     """Представление модели тега в админ-зоне."""
 
-    list_display = ('name', 'color', 'slug')
+    list_display = ('name', 'id', 'color', 'slug')
     search_fields = ('name',)
     list_filter = ('name', 'color')
     empty_value_display = '-пусто-'
@@ -105,10 +105,10 @@ class RecipeAdmin(admin.ModelAdmin):
         Returns:
             Количество добавлений рецепта в избранное.
         """
-        return obj.favorited.all().count()
+        return obj.favorites.all().count()
 
     @admin.display(description='Изображение')
-    def show_image(self, obj: Recipe) -> int:
+    def show_image(self, obj: Recipe) -> SafeString:
         """Отображение количества добавлений рецепта в избранное.
 
         Args:
