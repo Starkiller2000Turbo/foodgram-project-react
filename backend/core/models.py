@@ -1,29 +1,39 @@
-from django.conf import settings
 from django.db import models
 
-from users.models import User
 
+class UserRecipeModel(models.Model):
+    """Модель подписки."""
 
-class AuthorTextModel(models.Model):
-    """Модель с текстом и автором."""
-
-    author = models.ForeignKey(
-        User,
-        verbose_name='автор',
+    user = models.ForeignKey(
+        'users.User',
         on_delete=models.CASCADE,
+        verbose_name='пользователь',
     )
-    text = models.TextField(
-        verbose_name='описание',
-        help_text='Введите текст',
+    recipe = models.ForeignKey(
+        'recipes.Recipe',
+        on_delete=models.CASCADE,
+        verbose_name='рецепт',
     )
 
     class Meta:
         abstract = True
+        default_related_name = 'user_recipe'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'user'],
+                name='unique_recipe_user',
+            ),
+        ]
 
     def __str__(self) -> str:
-        """Задание текстового представления модели.
+        """Задание текстового представления избранного.
 
         Returns:
-            Поле text данной модели.
+            Строку вида 'Избранное <пользователь> содержит <рецепт>'
         """
-        return self.text[:settings.TEXT_LENGTH]  # fmt: skip
+        return ' '.join(
+            [
+                f'{self._meta.get_field("user").verbose_name}-{self.user},',
+                f'{self._meta.get_field("recipe").verbose_name}-{self.recipe}',
+            ],
+        )

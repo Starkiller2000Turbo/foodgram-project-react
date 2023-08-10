@@ -6,9 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY')
 
-DEBUG = True
+DEBUG = config('DEBUG', default=False) == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(' ')
 
 # fmt: off
 INSTALLED_APPS = [
@@ -61,16 +61,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('POSTGRES_DB', default='django'),
-        'USER': config('POSTGRES_USER', default='django'),
-        'PASSWORD': config('POSTGRES_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default=''),
-        'PORT': config('DB_PORT', default=5432),
-    },
-}
+if config('DATABASES') == 'SQL':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        },
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('POSTGRES_DB', defaul='django'),
+            'USER': config('POSTGRES_USER', default='django'),
+            'PASSWORD': config('POSTGRES_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default=''),
+            'PORT': config('DB_PORT', default=5432),
+        },
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -91,9 +99,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -127,13 +135,11 @@ DJOSER = {
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
     'SERIALIZERS': {
-        'current_user': 'users.serializers.UserReadSerializer',
-        'user': 'users.serializers.UserReadSerializer',
-        'user_create': 'users.serializers.UserSerializer',
+        'current_user': 'api.v1.serializers.UserSerializer',
+        'user': 'api.v1.serializers.UserSerializer',
+        'user_create': 'api.v1.serializers.UserSerializer',
     },
 }
-
-TEXT_LENGTH = 150
 
 MEDIA_URL = '/media/'
 

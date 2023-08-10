@@ -1,23 +1,24 @@
-from typing import List
-
 from django.contrib import admin
+from django.utils.safestring import SafeString, mark_safe
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 
+@admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     """Представление модели ингредиента в админ-зоне."""
 
-    list_display = ('name', 'measurement_unit')
+    list_display = ('name', 'id', 'measurement_unit')
     search_fields = ('name',)
     list_filter = ('name', 'measurement_unit')
     empty_value_display = '-пусто-'
 
 
+@admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     """Представление модели тега в админ-зоне."""
 
-    list_display = ('name', 'color', 'slug')
+    list_display = ('name', 'id', 'color', 'slug')
     search_fields = ('name',)
     list_filter = ('name', 'color')
     empty_value_display = '-пусто-'
@@ -28,6 +29,7 @@ class IngredientInlineAdmin(admin.TabularInline):
 
     model = Recipe.ingredients.through
     readonly_fields = ('measurement_unit',)
+    min_num = 1
 
     def measurement_unit(self, obj: RecipeIngredient) -> str:
         """Отображение поля единиц измерения для ингредиента в рецепте.
@@ -45,27 +47,32 @@ class TagInlineAdmin(admin.TabularInline):
     """Представление модели тега в рецепте."""
 
     model = Recipe.tags.through
+    min_num = 1
 
 
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     """Представление модели рецепта в админ-зоне."""
 
     list_display = (
         'name',
+        'id',
         'author',
         'text',
-        'image',
+        'show_image',
         'cooking_time',
         'get_tags',
         'get_ingredients',
+        'favorited',
     )
     search_fields = ('name', 'text')
     list_filter = ('name', 'author', 'tags')
     empty_value_display = '-пусто-'
     inlines = [IngredientInlineAdmin, TagInlineAdmin]
-    readonly_fields = ('favorited',)
+    readonly_fields = ('favorited', 'id')
 
-    def get_tags(self, obj: Recipe) -> List[str]:
+    @admin.display(description='Теги')
+    def get_tags(self, obj: Recipe) -> int:
         """Отображение списка тегов рецепта.
 
         Args:
@@ -74,9 +81,10 @@ class RecipeAdmin(admin.ModelAdmin):
         Returns:
             Список полей slug используемых тегов.
         """
-        return [tag.slug for tag in obj.tags.all()]
+        return obj.tags.all().count()
 
-    def get_ingredients(self, obj: Recipe) -> List[str]:
+    @admin.display(description='Ингредиенты')
+    def get_ingredients(self, obj: Recipe) -> int:
         """Отображение списка ингредиентов рецепта.
 
         Args:
@@ -85,8 +93,9 @@ class RecipeAdmin(admin.ModelAdmin):
         Returns:
             Список полей name используемых ингредиентов.
         """
-        return [ingredient.name for ingredient in obj.ingredients.all()]
+        return obj.ingredients.all().count()
 
+    @admin.display(description='Добавлено в избранное')
     def favorited(self, obj: Recipe) -> int:
         """Отображение количества добавлений рецепта в избранное.
 
@@ -96,13 +105,16 @@ class RecipeAdmin(admin.ModelAdmin):
         Returns:
             Количество добавлений рецепта в избранное.
         """
-        return obj.selected.count()
+        return obj.favorites.all().count()
 
-    favorited.short_description = 'Добавлено в избранное'  # type: ignore
-    get_tags.short_description = 'Теги'  # type: ignore
-    get_ingredients.short_description = 'Ингредиенты'  # type: ignore
+    @admin.display(description='Изображение')
+    def show_image(self, obj: Recipe) -> SafeString:
+        """Отображение количества добавлений рецепта в избранное.
 
+        Args:
+            obj: Модель рецепта.
 
-admin.site.register(Ingredient, IngredientAdmin)
-admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(Tag, TagAdmin)
+        Returns:
+            Количество добавлений рецепта в избранное.
+        """
+        return mark_safe(f'<img src={obj.image.url} width="80" height="60">')

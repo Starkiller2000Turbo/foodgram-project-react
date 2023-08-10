@@ -1,19 +1,34 @@
-from django.core.validators import MinValueValidator
+from colorfield.fields import ColorField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from core.models import AuthorTextModel
-from recipes.validators import validate_color
+from core.constants import DEFAULT_FIELD_LENGTH
+from core.models import UserRecipeModel
+from users.models import User
 
 
 class Ingredient(models.Model):
     """Модель ингредиента."""
 
-    name = models.CharField(max_length=200, unique=True)
-    measurement_unit = models.CharField(max_length=200)
+    name = models.CharField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        verbose_name='название',
+    )
+    measurement_unit = models.CharField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        verbose_name='единица измерения',
+    )
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_name_measurement',
+            ),
+        ]
 
     def __str__(self) -> str:
         """Представление модели при выводе.
@@ -27,11 +42,20 @@ class Ingredient(models.Model):
 class Tag(models.Model):
     """Модель тега."""
 
-    name = models.CharField(max_length=200, unique=True)
-    color = models.CharField(max_length=7, validators=[validate_color])
-    slug = models.SlugField()
+    name = models.CharField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        unique=True,
+        verbose_name='название',
+    )
+    color = ColorField(verbose_name='цвет')
+    slug = models.SlugField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        unique=True,
+        verbose_name='слаг',
+    )
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
@@ -44,9 +68,40 @@ class Tag(models.Model):
         return self.name
 
 
-class Recipe(AuthorTextModel):
+class Recipe(models.Model):
     """Модель рецепта."""
 
+    author = models.ForeignKey(
+        User,
+        verbose_name='автор',
+        on_delete=models.CASCADE,
+    )
+    text = models.TextField(
+        verbose_name='описание',
+        help_text='Введите текст',
+    )
+    image = models.ImageField(
+        upload_to='recipes/images/',
+        verbose_name='картинка',
+    )
+    cooking_time = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(
+                1,
+                message='Время приготовления не может быть менее 1 минуты',
+            ),
+            MaxValueValidator(
+                32767,
+                message='Время приготовления не может быть более 32767 минут',
+            ),
+        ],
+        verbose_name='время приготовления',
+    )
+    name = models.CharField(
+        max_length=DEFAULT_FIELD_LENGTH,
+        verbose_name='название',
+    )
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
     tags = models.ManyToManyField(
         Tag,
         through='RecipeTag',
@@ -57,23 +112,9 @@ class Recipe(AuthorTextModel):
         through='RecipeIngredient',
         verbose_name='ингредиент',
     )
-    image = models.ImageField(
-        upload_to='recipes/images/',
-        unique=True,
-        verbose_name='картинка',
-    )
-    cooking_time = models.IntegerField(
-        validators=[MinValueValidator(1)],
-        verbose_name='время приготовления',
-    )
-    name = models.CharField(
-        max_length=200,
-        verbose_name='название',
-        unique=True,
-    )
 
     class Meta:
-        ordering = ['id']
+        ordering = ('-created', 'name')
         default_related_name = 'recipes'
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
@@ -104,11 +145,11 @@ class RecipeTag(models.Model):
     class Meta:
         verbose_name = 'Тег рецепта'
         verbose_name_plural = 'Теги рецепта'
-        default_related_name = 'recipe_tags'
+        default_related_name = 'recipe_tag'
         constraints = [
             models.UniqueConstraint(
-                fields=['tag', 'recipe'],
-                name='recipe_tag',
+                fields=['recipe', 'tag'],
+                name='unique_recipe_tag',
             ),
         ]
 
@@ -134,16 +175,25 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         verbose_name='рецепт',
     )
-    amount = models.PositiveIntegerField(default=0)
+    amount = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(1, message='Количество не может быть менее 1'),
+            MaxValueValidator(
+                32767,
+                message='Время приготовления не может быть более 32767 минут',
+            ),
+        ],
+        default=1,
+    )
 
     class Meta:
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
-        default_related_name = 'recipe_ingredients'
+        default_related_name = 'recipe_ingredient'
         constraints = [
             models.UniqueConstraint(
-                fields=['ingredient', 'recipe'],
-                name='recipe_ingredient',
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient',
             ),
         ]
 
@@ -154,3 +204,27 @@ class RecipeIngredient(models.Model):
             Строковое представление связи рецепта и ингредиента.
         """
         return f'{self.recipe.name}, ингредиент - {self.ingredient.name}'
+
+
+class Purchase(UserRecipeModel):
+    """Модель покупки."""
+
+    class Meta:
+        verbose_name = 'Покупка'
+        verbose_name_plural = 'Покупки'
+        default_related_name = 'purchases'
+
+
+Purchase._meta.get_field('recipe').verbose_name = 'покупка'
+
+
+class Favorite(UserRecipeModel):
+    """Модель подписки."""
+
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные'
+        default_related_name = 'favorites'
+
+
+Favorite._meta.get_field('recipe').verbose_name = 'избранное'

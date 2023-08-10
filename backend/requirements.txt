@@ -7,8 +7,9 @@ click==8.1.6
 colorama==0.4.6
 cryptography==41.0.3
 defusedxml==0.7.1
-Django==4.2.4
-django-cors-headers==4.2.0
+Django==3.2.16
+django-colorfield==0.9.0
+django-cors-headers==3.13.0
 django-filter==23.2
 django-stubs==4.2.3
 django-stubs-ext==4.2.2
@@ -16,10 +17,13 @@ django-templated-mail==1.1.1
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 djoser==2.2.0
+drf-extra-fields==3.7.0
+filetype==1.2.0
 flake8==6.1.0
 flake8-commas==2.1.0
 flake8-docstrings==1.7.0
 flake8-print==5.0.0
+flake8-quotes==3.3.2
 gunicorn==21.2.0
 idna==3.4
 isort==5.12.0
@@ -31,7 +35,7 @@ packaging==23.1
 pathspec==0.11.2
 Pillow==10.0.0
 platformdirs==3.10.0
-psycopg2-binary==2.9.7
+psycopg2-binary==2.9.3
 pycodestyle==2.11.0
 pycparser==2.21
 pydocstyle==6.3.0
