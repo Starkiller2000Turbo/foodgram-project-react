@@ -1,5 +1,5 @@
 from colorfield.fields import ColorField
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from core.constants import DEFAULT_FIELD_LENGTH
@@ -20,10 +20,15 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        unique_together = ('name', 'measurement_unit')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_name_measurement',
+            ),
+        ]
 
     def __str__(self) -> str:
         """Представление модели при выводе.
@@ -50,7 +55,7 @@ class Tag(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
@@ -77,7 +82,6 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         upload_to='recipes/images/',
-        unique=True,
         verbose_name='картинка',
     )
     cooking_time = models.PositiveSmallIntegerField(
@@ -86,17 +90,31 @@ class Recipe(models.Model):
                 1,
                 message='Время приготовления не может быть менее 1 минуты',
             ),
+            MaxValueValidator(
+                32767,
+                message='Время приготовления не может быть более 32767 минут',
+            ),
         ],
         verbose_name='время приготовления',
     )
     name = models.CharField(
         max_length=DEFAULT_FIELD_LENGTH,
         verbose_name='название',
-        unique=True,
+    )
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+    tags = models.ManyToManyField(
+        Tag,
+        through='RecipeTag',
+        verbose_name='тег',
+    )
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        through='RecipeIngredient',
+        verbose_name='ингредиент',
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ('-created', 'name')
         default_related_name = 'recipes'
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
@@ -117,19 +135,23 @@ class RecipeTag(models.Model):
         Tag,
         on_delete=models.CASCADE,
         verbose_name='тег',
-        related_name='recipes',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='рецепт',
-        related_name='tags',
     )
 
     class Meta:
         verbose_name = 'Тег рецепта'
         verbose_name_plural = 'Теги рецепта'
-        unique_together = ('tag', 'recipe')
+        default_related_name = 'recipe_tag'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'tag'],
+                name='unique_recipe_tag',
+            ),
+        ]
 
     def __str__(self) -> str:
         """Задание текстового представления произведения.
@@ -147,17 +169,19 @@ class RecipeIngredient(models.Model):
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name='ингредиент',
-        related_name='recipes',
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='рецепт',
-        related_name='ingredients',
     )
     amount = models.PositiveSmallIntegerField(
         validators=[
             MinValueValidator(1, message='Количество не может быть менее 1'),
+            MaxValueValidator(
+                32767,
+                message='Время приготовления не может быть более 32767 минут',
+            ),
         ],
         default=1,
     )
@@ -165,7 +189,13 @@ class RecipeIngredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
-        unique_together = ('ingredient', 'recipe')
+        default_related_name = 'recipe_ingredient'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient',
+            ),
+        ]
 
     def __str__(self) -> str:
         """Задание текстового представления произведения.

@@ -18,7 +18,12 @@ class UserRecipeModel(models.Model):
     class Meta:
         abstract = True
         default_related_name = 'user_recipe'
-        unique_together = ('user', 'recipe')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'user'],
+                name='unique_recipe_user',
+            ),
+        ]
 
     def __str__(self) -> str:
         """Задание текстового представления избранного.

@@ -11,7 +11,7 @@ def shopping_file(cart: QuerySet) -> HttpResponse:
     Returns:
         HTTPResponse с файлом списка покупок.
     """
-    file_data = ''
+    file_data = 'Список покупок\n'
     for purchase in cart:
         file_data += ' '.join(
             [

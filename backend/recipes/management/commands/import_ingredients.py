@@ -29,10 +29,11 @@ class Command(BaseCommand):
             counter = 0
             data = csv.reader(csv_file)
             for name, measurement_unit in data:
-                if Ingredient.objects.get_or_create(
+                _, created = Ingredient.objects.get_or_create(
                     name=name,
                     measurement_unit=measurement_unit,
-                )[1]:
+                )
+                if created:
                     counter += 1
             print(  # noqa: T201
                 f'Import complete, imported {counter} ingredients',

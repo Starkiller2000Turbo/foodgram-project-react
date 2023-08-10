@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import SafeString, mark_safe
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 
 @admin.register(Ingredient)
@@ -27,7 +27,7 @@ class TagAdmin(admin.ModelAdmin):
 class IngredientInlineAdmin(admin.TabularInline):
     """Представление модели ингредиента в рецепте."""
 
-    model = RecipeIngredient
+    model = Recipe.ingredients.through
     readonly_fields = ('measurement_unit',)
     min_num = 1
 
@@ -46,7 +46,7 @@ class IngredientInlineAdmin(admin.TabularInline):
 class TagInlineAdmin(admin.TabularInline):
     """Представление модели тега в рецепте."""
 
-    model = RecipeTag
+    model = Recipe.tags.through
     min_num = 1
 
 
@@ -66,7 +66,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'favorited',
     )
     search_fields = ('name', 'text')
-    list_filter = ('name', 'author', 'tags__tag')
+    list_filter = ('name', 'author', 'tags')
     empty_value_display = '-пусто-'
     inlines = [IngredientInlineAdmin, TagInlineAdmin]
     readonly_fields = ('favorited', 'id')

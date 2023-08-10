@@ -131,13 +131,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             is_in_shopping_cart=Exists(
                 Purchase.objects.filter(
                     user=user,
-                    recipe__name=OuterRef('name'),
+                    recipe__id=OuterRef('id'),
                 ),
             ),
             is_favorited=Exists(
                 Favorite.objects.filter(
                     user=user,
-                    recipe__name=OuterRef('name'),
+                    recipe__id=OuterRef('id'),
                 ),
             ),
         )
@@ -148,7 +148,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer: Serializer,
         request: AuthenticatedHttpRequest,
         pk: str,
-    ) -> None:
+    ) -> HttpResponse:
         """Функция для создания объектов связи пользователя и рецепта.
 
         Args:
@@ -159,6 +159,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer = serializer(data={'user': request.user.id, 'recipe': pk})
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        recipe = get_object_or_404(Recipe, id=pk)
+        return Response(
+            RecipeNestedSerializer(
+                recipe,
+                context={'request': request},
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=['post'])
     def favorite(
@@ -177,14 +185,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             Ничего: в случае удаления рецепта.
             Информацию об ошибке: в прочих случаях.
         """
-        self.create_connection(FavoriteSerializer, request, pk)
-        return Response(
-            RecipeNestedSerializer(
-                get_object_or_404(Recipe, id=pk),
-                context={'request': request},
-            ).data,
-            status=status.HTTP_201_CREATED,
-        )
+        return self.create_connection(FavoriteSerializer, request, pk)
 
     @favorite.mapping.delete
     def delete_favorite(
@@ -223,14 +224,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             Ничего: в случае удаления рецепта.
             Информацию об ошибке: в прочих случаях.
         """
-        self.create_connection(PurchaseSerializer, request, pk)
-        return Response(
-            RecipeNestedSerializer(
-                get_object_or_404(Recipe, id=pk),
-                context={'request': request},
-            ).data,
-            status=status.HTTP_201_CREATED,
-        )
+        return self.create_connection(PurchaseSerializer, request, pk)
 
     @shopping_cart.mapping.delete
     def delete_shopping_cart(

@@ -29,11 +29,12 @@ class Command(BaseCommand):
             counter = 0
             data = csv.reader(csv_file)
             for name, color, slug in data:
-                if Tag.objects.get_or_create(
+                _, created = Tag.objects.get_or_create(
                     name=name,
                     color=color,
                     slug=slug,
-                )[1]:
+                )
+                if created:
                     counter += 1
             print(  # noqa: T201
                 f'Import complete, imported {counter} tags',
