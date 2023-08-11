@@ -5,7 +5,11 @@ from django.core.exceptions import ValidationError
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import exceptions, serializers
 
-from core.types import ComplexSerializerData, SerializerStrData
+from core.constants import (
+    MAX_POSITIVE_INTEGER_VALUE,
+    MIN_POSITIVE_INTEGER_VALUE,
+)
+from core.types import ComplexSerializerData
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -100,21 +104,6 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True},
         }
-
-    def create(self, validated_data: SerializerStrData) -> User:
-        """Метод для создания пользователя с хэшированным паролем.
-
-        Args:
-            validated_data: Данные пользователя, прошедшие валидацию.
-
-        Returns:
-            Созданную модель пользователя.
-        """
-        password = validated_data.pop('password')
-        user = User(**validated_data)
-        user.set_password(password)
-        user.save()
-        return user
 
     def get_is_subscribed(self, obj: User) -> bool:
         """Формирование значения поля is_subscribed.
@@ -216,7 +205,10 @@ class IngredientWriteSerializer(serializers.ModelSerializer):
         read_only=False,
         queryset=Ingredient.objects.all(),
     )
-    amount = serializers.IntegerField(min_value=1, max_value=32767)
+    amount = serializers.IntegerField(
+        min_value=MIN_POSITIVE_INTEGER_VALUE,
+        max_value=MAX_POSITIVE_INTEGER_VALUE,
+    )
 
     class Meta:
         model = RecipeIngredient
@@ -299,7 +291,10 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         required=True,
         error_messages={'required': 'Выберите хотя бы 1 тег'},
     )
-    cooking_time = serializers.IntegerField(min_value=1, max_value=32767)
+    cooking_time = serializers.IntegerField(
+        min_value=MIN_POSITIVE_INTEGER_VALUE,
+        max_value=MAX_POSITIVE_INTEGER_VALUE,
+    )
 
     class Meta:
         fields = (

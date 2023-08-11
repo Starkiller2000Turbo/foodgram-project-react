@@ -2,7 +2,11 @@ from colorfield.fields import ColorField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from core.constants import DEFAULT_FIELD_LENGTH
+from core.constants import (
+    DEFAULT_FIELD_LENGTH,
+    MAX_POSITIVE_INTEGER_VALUE,
+    MIN_POSITIVE_INTEGER_VALUE,
+)
 from core.models import UserRecipeModel
 from users.models import User
 
@@ -87,11 +91,11 @@ class Recipe(models.Model):
     cooking_time = models.PositiveSmallIntegerField(
         validators=[
             MinValueValidator(
-                1,
+                MIN_POSITIVE_INTEGER_VALUE,
                 message='Время приготовления не может быть менее 1 минуты',
             ),
             MaxValueValidator(
-                32767,
+                MAX_POSITIVE_INTEGER_VALUE,
                 message='Время приготовления не может быть более 32767 минут',
             ),
         ],
@@ -177,9 +181,12 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveSmallIntegerField(
         validators=[
-            MinValueValidator(1, message='Количество не может быть менее 1'),
+            MinValueValidator(
+                MIN_POSITIVE_INTEGER_VALUE,
+                message='Количество не может быть менее 1',
+            ),
             MaxValueValidator(
-                32767,
+                MAX_POSITIVE_INTEGER_VALUE,
                 message='Время приготовления не может быть более 32767 минут',
             ),
         ],
