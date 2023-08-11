@@ -145,6 +145,11 @@ MEDIA_URL = '/media/'
 
 MEDIA_ROOT = str(BASE_DIR / 'media')
 
-DATA_IMPORT_LOCATION = str(
-    (BASE_DIR / 'data/'),
-)
+if config('CONTAINERS') == 'True':
+    DATA_IMPORT_LOCATION = str(
+        (BASE_DIR / 'data/'),
+    )
+else:
+    DATA_IMPORT_LOCATION = str(
+        (BASE_DIR / 'data/'),
+    )
