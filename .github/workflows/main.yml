@@ -96,6 +96,7 @@ jobs:
           cd foodgram/infra
           sudo nginx -s stop
           sudo fuser -k 80/tcp
+          sudo fuser -k 443/tcp
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
