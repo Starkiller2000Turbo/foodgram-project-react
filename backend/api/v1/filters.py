@@ -1,4 +1,6 @@
-from django_filters.rest_framework import filters, FilterSet
+from typing import Any
+
+from django_filters.rest_framework import FilterSet, filters
 
 from recipes.models import Recipe, Tag
 from users.models import User
@@ -7,7 +9,11 @@ from users.models import User
 class RecipeFilterSet(FilterSet):
     """Фильтр для моделей рецептов."""
 
-    tags = filters.ModelMultipleChoiceFilter(queryset=Tag.objects.all(), to_field_name='slug', field_name='tags__slug',)
+    tags = filters.ModelMultipleChoiceFilter(
+        queryset=Tag.objects.all(),
+        to_field_name='slug',
+        field_name='tags__slug',
+    )
     is_favorited = filters.BooleanFilter(
         field_name='is_favorited',
     )
@@ -19,8 +25,8 @@ class RecipeFilterSet(FilterSet):
     class Meta:
         model = Recipe
         fields = ('tags', 'author', 'is_favorited', 'is_in_shopping_cart')
-    
-    def __init__(self, *args, **kwargs):
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         data = kwargs['data']
         author_data = data.get('author')
         if author_data == 'me':

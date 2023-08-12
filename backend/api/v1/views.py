@@ -1,5 +1,5 @@
-from django.db.models import Exists, OuterRef, QuerySet, Sum, Case, When, Q
-from django.http import HttpResponse
+from django.db.models import Exists, OuterRef, QuerySet, Sum
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status, views, viewsets
@@ -249,7 +249,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(
         self,
         request: AuthenticatedHttpRequest,
-    ) -> HttpResponse:
+    ) -> FileResponse:
         """Обработка запросов к списку покупок.
 
         Args:
