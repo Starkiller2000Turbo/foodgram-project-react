@@ -404,10 +404,10 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             Преобразованную модель рецепта
         """
         ingredients_data = validated_data.pop('ingredients', [])
-        instance.ingredients.all().delete()
+        instance.recipe_ingredient.all().delete()
         self.add_ingredients(instance, ingredients_data)
         tags = validated_data.pop('tags', [])
-        instance.tags.all().delete()
+        instance.recipe_tag.all().delete()
         instance.tags.set(tags)
         return super().update(instance, validated_data)
 
