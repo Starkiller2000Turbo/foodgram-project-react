@@ -62,7 +62,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-if config('DATABASES') == 'SQL':
+if config('DATABASES', default='POSTGRES') == 'SQL':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
