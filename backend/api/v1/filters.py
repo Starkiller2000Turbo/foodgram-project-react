@@ -1,13 +1,12 @@
-from django_filters import rest_framework as filters
-from django_filters.rest_framework import FilterSet
+from django_filters.rest_framework import filters, FilterSet
 
-from recipes.models import Recipe
+from recipes.models import Recipe, Tag
 
 
 class RecipeFilterSet(FilterSet):
     """Фильтр для моделей рецептов."""
 
-    tags = filters.AllValuesMultipleFilter(field_name='tags__slug')
+    tags = filters.ModelMultipleChoiceFilter(queryset=Tag.objects.all(), to_field_name='slug', field_name='tags__slug',)
     is_favorited = filters.BooleanFilter(
         field_name='is_favorited',
     )

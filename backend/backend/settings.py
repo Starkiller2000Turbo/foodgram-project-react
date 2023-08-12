@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'colorfield',
     'django_filters',
     'rest_framework.authtoken',
     'rest_framework',
@@ -72,7 +73,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('POSTGRES_DB', defaul='django'),
+            'NAME': config('POSTGRES_DB', default='django'),
             'USER': config('POSTGRES_USER', default='django'),
             'PASSWORD': config('POSTGRES_PASSWORD', default=''),
             'HOST': config('DB_HOST', default=''),
@@ -119,7 +120,7 @@ AUTH_USER_MODEL = 'users.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -132,12 +133,12 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'PERMISSIONS': {
+        'user': ['rest_framework.permissions.IsAuthenticated'],
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
     'SERIALIZERS': {
         'current_user': 'api.v1.serializers.UserSerializer',
         'user': 'api.v1.serializers.UserSerializer',
-        'user_create': 'api.v1.serializers.UserSerializer',
     },
 }
 
@@ -145,11 +146,6 @@ MEDIA_URL = '/media/'
 
 MEDIA_ROOT = str(BASE_DIR / 'media')
 
-if config('CONTAINERS') == 'True':
-    DATA_IMPORT_LOCATION = str(
-        (BASE_DIR / 'data/'),
-    )
-else:
-    DATA_IMPORT_LOCATION = str(
-        (BASE_DIR / 'data/'),
-    )
+DATA_IMPORT_LOCATION = str(
+    (BASE_DIR / 'data/'),
+)

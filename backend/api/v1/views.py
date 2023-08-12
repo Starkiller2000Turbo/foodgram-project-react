@@ -1,4 +1,4 @@
-from django.db.models import Exists, OuterRef, QuerySet, Sum
+from django.db.models import Exists, OuterRef, QuerySet, Sum, Case, When, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -126,22 +126,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
             QuerySet, содержащий рецепты с дополнительными полями.
         """
         queryset = super(RecipeViewSet, self).get_queryset()
-        user = self.request.user
-        recipes = queryset.annotate(
+        user_id = self.request.user.id
+        return queryset.annotate(
             is_in_shopping_cart=Exists(
                 Purchase.objects.filter(
-                    user=user,
+                    user_id=user_id,
                     recipe__id=OuterRef('id'),
                 ),
             ),
             is_favorited=Exists(
                 Favorite.objects.filter(
-                    user=user,
+                    user_id=user_id,
                     recipe__id=OuterRef('id'),
                 ),
             ),
         )
-        return recipes
 
     def create_connection(
         self,

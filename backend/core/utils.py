@@ -12,6 +12,8 @@ def shopping_file(cart: QuerySet) -> HttpResponse:
         HTTPResponse с файлом списка покупок.
     """
     file_data = 'Список покупок\n'
+    if not cart:
+        file_data += '-Список покупок пока пуст-'
     for purchase in cart:
         file_data += ' '.join(
             [
@@ -22,9 +24,9 @@ def shopping_file(cart: QuerySet) -> HttpResponse:
         )
     response = HttpResponse(
         file_data,
-        content_type='application/text charset=utf-8',
+        content_type='application/pdf charset=utf-8',
     )
     response[
         'Content-Disposition'
-    ] = 'attachment; filename="shopping_cart.txt"'
+    ] = 'attachment; filename="shopping-list.pdf"'
     return response
