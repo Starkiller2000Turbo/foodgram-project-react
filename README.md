@@ -139,6 +139,18 @@ docker compose -f docker-compose.production.yml exec backend python manage.py im
 docker compose -f docker-compose.production.yml exec backend python manage.py import_ingredients
 ```
 
+### Стек технологий использованный в проекте:
+
+- Python
+- Django
+- Django REST Framework
+- REST API
+- SQLite
+- Аутентификация по токену
+- Reportlab
+- Docker
+- Workflow
+
 ### Автор:
 
 - :white_check_mark: [Starkiller2000Turbo](https://github.com/Starkiller2000Turbo)
