@@ -8,7 +8,7 @@ SECRET_KEY = config('SECRET_KEY', default='KEY')
 
 DEBUG = config('DEBUG', default=False) == 'True'
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(' ')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost 127.0.0.1').split(' ')
 
 # fmt: off
 INSTALLED_APPS = [
