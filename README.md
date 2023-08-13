@@ -3,7 +3,7 @@
 ![example workflow](https://github.com/Starkiller2000Turbo/foodgram-project-react/actions/workflows/main.yml/badge.svg)
 
 Ссылка на проект на сервере:
-[a link](https://food-project.hopto.org/)
+- :white_check_mark: [Проект на сервере](https://food-project.hopto.org/)
 
 ### Описание:
 
