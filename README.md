@@ -1,6 +1,8 @@
 ### Проект Foodgram. Python-разработчик (бекенд) (Яндекс.Практикум)
 
 ![example workflow](https://github.com/Starkiller2000Turbo/foodgram-project-react/actions/workflows/main.yml/badge.svg)
+
+Ссылка на проект на сервере:
 [a link](https://food-project.hopto.org/)
 
 ### Описание:
